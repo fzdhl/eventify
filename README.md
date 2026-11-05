@@ -1,2 +1,2 @@
 # eventify
-Mobile Development Project-Based 
+Project Akhir Pengembangan Aplikasi Mobile 
