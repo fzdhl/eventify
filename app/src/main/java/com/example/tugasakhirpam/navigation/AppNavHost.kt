@@ -18,8 +18,8 @@ import com.example.tugasakhirpam.ui.components.BottomNavItem
 import com.example.tugasakhirpam.ui.event.EventDetailScreen
 import com.example.tugasakhirpam.ui.event.EventFormScreen
 import com.example.tugasakhirpam.ui.event.EventListScreen
-import com.example.tugasakhirpam.ui.event.FavoritesScreen
 import com.example.tugasakhirpam.ui.event.MyEventsScreen
+import com.example.tugasakhirpam.ui.favorites.FavoritesScreen
 import com.example.tugasakhirpam.ui.home.HomeScreen
 import com.example.tugasakhirpam.ui.registration.RegistrationDetailScreen
 import com.example.tugasakhirpam.ui.registration.RegistrationFormScreen

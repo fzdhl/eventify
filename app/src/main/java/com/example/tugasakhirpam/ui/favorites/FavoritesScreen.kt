@@ -1,4 +1,4 @@
-package com.example.tugasakhirpam.ui.event
+package com.example.tugasakhirpam.ui.favorites
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +23,10 @@ import com.example.tugasakhirpam.ui.components.FavoriteToggle
 import com.example.tugasakhirpam.ui.components.InfoBadge
 import com.example.tugasakhirpam.ui.components.MessageState
 import com.example.tugasakhirpam.ui.components.PageHeader
+import com.example.tugasakhirpam.ui.event.EventListBody
+import com.example.tugasakhirpam.ui.event.EventListSource
+import com.example.tugasakhirpam.ui.event.EventListUiState
+import com.example.tugasakhirpam.ui.event.EventListViewModel
 import com.example.tugasakhirpam.ui.theme.AppBackground
 import com.example.tugasakhirpam.ui.theme.DangerBg
 import com.example.tugasakhirpam.ui.theme.DangerText
