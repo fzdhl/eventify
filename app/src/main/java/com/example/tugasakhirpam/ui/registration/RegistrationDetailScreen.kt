@@ -234,7 +234,7 @@ private fun DetailBody(registration: Registration, onBack: () -> Unit) {
 
         Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CategoryLabel(event?.category?.label ?: "Event", filled = true)
+                CategoryLabel(event?.categoryName ?: "Event", filled = true)
                 Spacer(Modifier.weight(1f))
                 StatusBadge(registration.status)
             }

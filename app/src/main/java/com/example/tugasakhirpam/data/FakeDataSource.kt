@@ -1,7 +1,7 @@
 package com.example.tugasakhirpam.data
 
+import com.example.tugasakhirpam.model.Category
 import com.example.tugasakhirpam.model.Event
-import com.example.tugasakhirpam.model.EventCategory
 import com.example.tugasakhirpam.model.Registration
 import com.example.tugasakhirpam.model.RegistrationStatus
 import com.example.tugasakhirpam.model.Review
@@ -31,9 +31,18 @@ internal object FakeDataSource {
     private fun day(offset: Long) = today.plusDays(offset).toString()
     private fun createdAt(daysAgo: Long) = OffsetDateTime.now().minusDays(daysAgo).toString()
 
+    val categories = mutableListOf(
+        Category(1, "Seminar", "Wawasan dari pembicara ahli", "mic"),
+        Category(2, "Workshop", "Belajar langsung lewat praktik", "laptop"),
+        Category(3, "Competition", "Tunjukkan kemampuan terbaikmu", "trophy"),
+        Category(4, "Organization", "Kegiatan organisasi mahasiswa", "groups"),
+        Category(5, "Technology", "Inovasi dan tren teknologi", "laptop"),
+    )
+    var nextCategoryId = 6L
+
     val events = mutableListOf(
         Event(
-            id = 1, title = "Future Tech Summit 2025", category = EventCategory.SEMINAR,
+            id = 1, title = "Future Tech Summit 2025", categoryId = 5,
             organizer = "Himpunan Mahasiswa Informatika", createdBy = "u-099",
             eventDate = day(12), startTime = "09:00", endTime = "15:00",
             location = "Auditorium Utama", quota = 150,
@@ -42,7 +51,7 @@ internal object FakeDataSource {
             imageUrl = "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800",
         ),
         Event(
-            id = 2, title = "UI/UX Design Workshop", category = EventCategory.WORKSHOP,
+            id = 2, title = "UI/UX Design Workshop", categoryId = 2,
             organizer = "UKM Desain Kreatif", createdBy = "u-098",
             eventDate = day(17), startTime = "13:00", endTime = "16:00",
             location = "Lab Multimedia 2", quota = 40,
@@ -51,7 +60,7 @@ internal object FakeDataSource {
             imageUrl = "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800",
         ),
         Event(
-            id = 3, title = "National Business Challenge", category = EventCategory.COMPETITION,
+            id = 3, title = "National Business Challenge", categoryId = 3,
             organizer = "BEM Fakultas Ekonomi", createdBy = "u-097",
             eventDate = day(26), startTime = "08:00", endTime = "17:00",
             location = "Student Hall", quota = 60,
@@ -60,7 +69,7 @@ internal object FakeDataSource {
             imageUrl = "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=800",
         ),
         Event(
-            id = 4, title = "Campus Innovation Week", category = EventCategory.SEMINAR,
+            id = 4, title = "Campus Innovation Week", categoryId = 1,
             organizer = "Lembaga Inovasi Kampus", createdBy = "u-096",
             eventDate = day(35), startTime = "09:00", endTime = "16:00",
             location = "Gedung Serbaguna", quota = 200, isFeatured = true,
@@ -69,7 +78,7 @@ internal object FakeDataSource {
             imageUrl = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800",
         ),
         Event(
-            id = 5, title = "Public Speaking Bootcamp", category = EventCategory.WORKSHOP,
+            id = 5, title = "Public Speaking Bootcamp", categoryId = 2,
             organizer = "UKM Debat", createdBy = "u-095",
             eventDate = day(8), startTime = "10:00", endTime = "12:00",
             location = "Ruang Seminar B", quota = 30,
@@ -77,7 +86,7 @@ internal object FakeDataSource {
             imageUrl = "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800",
         ),
         Event(
-            id = 6, title = "Open Recruitment BEM 2026", category = EventCategory.ORGANIZATION,
+            id = 6, title = "Open Recruitment BEM 2026", categoryId = 4,
             organizer = "BEM Universitas", createdBy = "u-094",
             eventDate = day(20), startTime = "13:00", endTime = "15:00",
             location = "Aula Rektorat", quota = 100,
@@ -85,7 +94,7 @@ internal object FakeDataSource {
             imageUrl = "https://images.unsplash.com/photo-1529070538774-1843cb3265df?w=800",
         ),
         Event(
-            id = 7, title = "Kelas Android Jetpack Compose", category = EventCategory.WORKSHOP,
+            id = 7, title = "Kelas Android Jetpack Compose", categoryId = 2,
             organizer = "Aditya Pratama", createdBy = "u-001",
             eventDate = day(14), startTime = "09:00", endTime = "12:00",
             location = "Lab Komputer 3", quota = 30,
@@ -94,7 +103,7 @@ internal object FakeDataSource {
             imageUrl = "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800",
         ),
         Event(
-            id = 8, title = "Seminar Karier & Magang", category = EventCategory.SEMINAR,
+            id = 8, title = "Seminar Karier & Magang", categoryId = 1,
             organizer = "Pusat Karier Kampus", createdBy = "u-093",
             eventDate = day(-10), startTime = "09:00", endTime = "12:00",
             location = "Auditorium Utama", quota = 120,
@@ -102,7 +111,7 @@ internal object FakeDataSource {
             imageUrl = "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800",
         ),
         Event(
-            id = 9, title = "Workshop Git & GitHub untuk Pemula", category = EventCategory.WORKSHOP,
+            id = 9, title = "Workshop Git & GitHub untuk Pemula", categoryId = 2,
             organizer = "Google Developer Student Club", createdBy = "u-092",
             eventDate = day(-20), startTime = "13:00", endTime = "16:00",
             location = "Lab Komputer 1", quota = 40,
@@ -159,11 +168,15 @@ internal object FakeDataSource {
         (otherParticipants[eventId] ?: 0) +
             registrations.count { it.eventId == eventId && it.isActive }
 
+    fun categoryNameOf(categoryId: Long): String =
+        categories.firstOrNull { it.id == categoryId }?.name ?: "Tanpa kategori"
+
     fun withState(event: Event): Event {
         val eventReviews = reviews.filter { it.eventId == event.id }
         return event.copy(
             registeredCount = activeCount(event.id),
             isFavorite = event.id in favoriteEventIds,
+            categoryName = categoryNameOf(event.categoryId),
             ratingAverage = if (eventReviews.isEmpty()) 0.0 else eventReviews.map { it.rating }.average(),
             reviewCount = eventReviews.size,
         )

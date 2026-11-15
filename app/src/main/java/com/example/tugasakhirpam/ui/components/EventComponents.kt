@@ -24,12 +24,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.CalendarToday
-import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.Groups
-import androidx.compose.material.icons.outlined.Laptop
 import androidx.compose.material.icons.outlined.LocationOn
-import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -45,7 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tugasakhirpam.model.Event
-import com.example.tugasakhirpam.model.EventCategory
+import com.example.tugasakhirpam.model.Category
 import com.example.tugasakhirpam.model.Registration
 import com.example.tugasakhirpam.ui.theme.BorderSoft
 import com.example.tugasakhirpam.ui.theme.BrandBlue
@@ -55,13 +51,6 @@ import com.example.tugasakhirpam.ui.theme.TextMuted
 import com.example.tugasakhirpam.ui.theme.TextPrimary
 import com.example.tugasakhirpam.ui.theme.TextSecondary
 import com.example.tugasakhirpam.util.DateFormatter
-
-fun categoryIcon(category: EventCategory): ImageVector = when (category) {
-    EventCategory.SEMINAR -> Icons.Outlined.Mic
-    EventCategory.WORKSHOP -> Icons.Outlined.Laptop
-    EventCategory.COMPETITION -> Icons.Outlined.EmojiEvents
-    EventCategory.ORGANIZATION -> Icons.Outlined.Groups
-}
 
 @Composable
 fun EventCard(
@@ -99,7 +88,7 @@ fun EventCard(
             ) {
                 Row(verticalAlignment = Alignment.Top) {
                     CategoryLabel(
-                        event.category.label,
+                        event.categoryName,
                         Modifier
                             .weight(1f)
                             .padding(top = 2.dp)
@@ -162,7 +151,7 @@ fun RegistrationCard(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     CategoryLabel(
-                        event?.category?.label ?: "Event",
+                        event?.categoryName ?: "Event",
                         Modifier
                             .weight(1f)
                             .padding(top = 2.dp)
@@ -205,7 +194,7 @@ fun FavoriteToggle(isFavorite: Boolean, onToggle: () -> Unit, modifier: Modifier
 }
 
 @Composable
-fun CategoryTile(category: EventCategory, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun CategoryTile(category: Category, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),
@@ -224,11 +213,11 @@ fun CategoryTile(category: EventCategory, onClick: () -> Unit, modifier: Modifie
                     .clip(RoundedCornerShape(12.dp))
                     .background(BrandBlueSoft)
             ) {
-                Icon(categoryIcon(category), null, tint = BrandBlue, modifier = Modifier.size(20.dp))
+                Icon(iconForCategory(category.iconKey), null, tint = BrandBlue, modifier = Modifier.size(20.dp))
             }
             Spacer(Modifier.height(8.dp))
             Text(
-                category.label,
+                category.name,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = TextPrimary,
@@ -241,8 +230,9 @@ fun CategoryTile(category: EventCategory, onClick: () -> Unit, modifier: Modifie
 
 @Composable
 fun CategoryFilterRow(
-    selected: EventCategory?,
-    onSelect: (EventCategory?) -> Unit,
+    categories: List<Category>,
+    selectedId: Long?,
+    onSelect: (Long?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyRow(
@@ -251,10 +241,12 @@ fun CategoryFilterRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
-            FilterChipItem("Semua", Icons.Outlined.Apps, selected == null) { onSelect(null) }
+            FilterChipItem("Semua", Icons.Outlined.Apps, selectedId == null) { onSelect(null) }
         }
-        items(EventCategory.entries) { category ->
-            FilterChipItem(category.label, categoryIcon(category), selected == category) { onSelect(category) }
+        items(categories, key = { it.id }) { category ->
+            FilterChipItem(category.name, iconForCategory(category.iconKey), selectedId == category.id) {
+                onSelect(category.id)
+            }
         }
     }
 }

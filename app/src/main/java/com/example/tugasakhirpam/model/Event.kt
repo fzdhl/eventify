@@ -2,17 +2,12 @@ package com.example.tugasakhirpam.model
 
 import java.time.LocalDate
 
-enum class EventCategory(val label: String) {
-    SEMINAR("Seminar"),
-    WORKSHOP("Workshop"),
-    COMPETITION("Competition"),
-    ORGANIZATION("Organization"),
-}
-
 data class Event(
     val id: Long,
     val title: String,
-    val category: EventCategory,
+    val categoryId: Long,
+    /** Hasil join ke tabel categories, diisi repository. Di Supabase: select("*, categories(name)"). */
+    val categoryName: String = "",
     val organizer: String,
     val createdBy: String,
     val eventDate: String,
@@ -36,7 +31,7 @@ data class Event(
 
 data class EventInput(
     val title: String,
-    val category: EventCategory,
+    val categoryId: Long,
     val description: String,
     val eventDate: String,
     val startTime: String,

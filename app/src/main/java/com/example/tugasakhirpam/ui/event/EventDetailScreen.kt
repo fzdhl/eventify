@@ -334,7 +334,7 @@ private fun DetailHeader(
 @Composable
 private fun EventInfoSection(event: Event, isOwner: Boolean) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        CategoryLabel(event.category.label, filled = true)
+        CategoryLabel(event.categoryName, filled = true)
         Spacer(Modifier.weight(1f))
         if (isOwner) InfoBadge("Event kamu")
         if (event.isPast) InfoBadge("Selesai", background = SegmentTrack, contentColor = TextSecondary)

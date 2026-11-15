@@ -3,8 +3,9 @@ package com.example.tugasakhirpam.ui.event
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tugasakhirpam.data.AppContainer
+import com.example.tugasakhirpam.data.CategoryRepository
 import com.example.tugasakhirpam.data.EventRepository
-import com.example.tugasakhirpam.model.EventCategory
+import com.example.tugasakhirpam.model.Category
 import com.example.tugasakhirpam.model.EventInput
 import com.example.tugasakhirpam.util.DateFormatter
 import com.example.tugasakhirpam.util.runSafely
@@ -22,7 +23,8 @@ data class EventFormUiState(
     val isLoadingInitial: Boolean = false,
     val posterUri: String? = null,
     val title: String = "",
-    val category: EventCategory? = null,
+    val categories: List<Category> = emptyList(),
+    val categoryId: Long? = null,
     val description: String = "",
     val eventDate: String = "",
     val startTime: String = "",
@@ -48,6 +50,7 @@ data class EventFormUiState(
 
 class EventFormViewModel(
     private val repository: EventRepository = AppContainer.eventRepository,
+    private val categoryRepository: CategoryRepository = AppContainer.categoryRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EventFormUiState())
@@ -60,10 +63,14 @@ class EventFormViewModel(
         if (initialized) return
         initialized = true
         editingId = eventId
-        if (eventId == null) return
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isEditMode = true, isLoadingInitial = true) }
+            _uiState.update { it.copy(isEditMode = eventId != null, isLoadingInitial = eventId != null) }
+            runSafely { categoryRepository.getCategories() }
+                .onSuccess { list -> _uiState.update { it.copy(categories = list) } }
+                .onFailure { e -> _uiState.update { it.copy(errorMessage = e.toUserMessage()) } }
+            if (eventId == null) return@launch
+
             runSafely { repository.getEvent(eventId) }
                 .onSuccess { e ->
                     _uiState.update {
@@ -71,7 +78,7 @@ class EventFormViewModel(
                             isLoadingInitial = false,
                             posterUri = e.imageUrl,
                             title = e.title,
-                            category = e.category,
+                            categoryId = e.categoryId,
                             description = e.description,
                             eventDate = e.eventDate,
                             startTime = e.startTime,
@@ -88,7 +95,7 @@ class EventFormViewModel(
 
     fun onPosterSelected(uri: String) = _uiState.update { it.copy(posterUri = uri) }
     fun onTitleChange(v: String) = _uiState.update { it.copy(title = v.take(80), titleError = null) }
-    fun onCategorySelected(c: EventCategory) = _uiState.update { it.copy(category = c, categoryError = null) }
+    fun onCategorySelected(id: Long) = _uiState.update { it.copy(categoryId = id, categoryError = null) }
     fun onDescriptionChange(v: String) = _uiState.update { it.copy(description = v.take(1000), descriptionError = null) }
     fun onDateSelected(date: String) = _uiState.update { it.copy(eventDate = date, dateError = null, timeError = null) }
     fun onStartTimeSelected(time: String) = _uiState.update { it.copy(startTime = time, timeError = null) }
@@ -107,7 +114,7 @@ class EventFormViewModel(
             val s = _uiState.value
             val input = EventInput(
                 title = s.title.trim(),
-                category = s.category!!,
+                categoryId = s.categoryId!!,
                 description = s.description.trim(),
                 eventDate = s.eventDate,
                 startTime = s.startTime,
@@ -140,7 +147,7 @@ class EventFormViewModel(
                 s.title.trim().length < 5 -> "Nama event minimal 5 karakter"
                 else -> null
             },
-            categoryError = if (s.category == null) "Pilih kategori event" else null,
+            categoryError = if (s.categoryId == null) "Pilih kategori event" else null,
             descriptionError = when {
                 s.description.isBlank() -> "Deskripsi wajib diisi"
                 s.description.trim().length < 20 -> "Deskripsi minimal 20 karakter agar peserta paham isi event"

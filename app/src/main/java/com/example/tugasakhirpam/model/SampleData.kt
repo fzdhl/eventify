@@ -16,7 +16,8 @@ object SampleData {
     val event = Event(
         id = 1,
         title = "Future Tech Summit 2025",
-        category = EventCategory.SEMINAR,
+        categoryId = 1,
+        categoryName = "Seminar",
         organizer = "Himpunan Mahasiswa Informatika",
         createdBy = "u-099",
         eventDate = LocalDate.now().plusDays(12).toString(),
@@ -32,8 +33,8 @@ object SampleData {
     val events = listOf(
         event.copy(id = 4, title = "Campus Innovation Week", isFeatured = true, location = "Gedung Serbaguna"),
         event,
-        event.copy(id = 2, title = "UI/UX Design Workshop", category = EventCategory.WORKSHOP, location = "Lab Multimedia 2"),
-        event.copy(id = 3, title = "National Business Challenge", category = EventCategory.COMPETITION, location = "Student Hall"),
+        event.copy(id = 2, title = "UI/UX Design Workshop", categoryId = 2, categoryName = "Workshop", location = "Lab Multimedia 2"),
+        event.copy(id = 3, title = "National Business Challenge", categoryId = 3, categoryName = "Competition", location = "Student Hall"),
     )
 
     val registration = Registration(

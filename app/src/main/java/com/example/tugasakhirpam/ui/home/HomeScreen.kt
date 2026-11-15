@@ -54,7 +54,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tugasakhirpam.model.Event
-import com.example.tugasakhirpam.model.EventCategory
+import com.example.tugasakhirpam.model.Category
 import com.example.tugasakhirpam.model.SampleData
 import com.example.tugasakhirpam.model.User
 import com.example.tugasakhirpam.ui.components.AppBottomBar
@@ -84,7 +84,7 @@ fun HomeScreen(
     onResultConsumed: () -> Unit,
     onEventClick: (Long) -> Unit,
     onSeeAllEvents: () -> Unit,
-    onCategoryClick: (EventCategory) -> Unit,
+    onCategoryClick: (Category) -> Unit,
     onBottomNavClick: (BottomNavItem) -> Unit,
     onRetry: () -> Unit,
 ) {
@@ -118,7 +118,7 @@ fun HomeContent(
     onQueryChange: (String) -> Unit,
     onEventClick: (Long) -> Unit,
     onSeeAllEvents: () -> Unit,
-    onCategoryClick: (EventCategory) -> Unit,
+    onCategoryClick: (Category) -> Unit,
     onBottomNavClick: (BottomNavItem) -> Unit,
     onRetry: () -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
@@ -172,7 +172,7 @@ fun HomeContent(
                     }
                     item(key = "categories") {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            EventCategory.entries.forEach { category ->
+                            state.categories.take(4).forEach { category ->
                                 CategoryTile(
                                     category = category,
                                     onClick = { onCategoryClick(category) },

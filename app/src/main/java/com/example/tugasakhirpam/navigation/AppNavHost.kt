@@ -6,7 +6,6 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -16,7 +15,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
-import com.example.tugasakhirpam.model.EventCategory
+import com.example.tugasakhirpam.ui.category.CategoryDetailScreen
+import com.example.tugasakhirpam.ui.category.CategoryDetailViewModel
+import com.example.tugasakhirpam.ui.category.CategoryFormScreen
+import com.example.tugasakhirpam.ui.category.CategoryFormViewModel
+import com.example.tugasakhirpam.ui.category.CategoryListScreen
+import com.example.tugasakhirpam.ui.category.CategoryListViewModel
 import com.example.tugasakhirpam.ui.components.BottomNavItem
 import com.example.tugasakhirpam.ui.event.EventDetailScreen
 import com.example.tugasakhirpam.ui.event.EventDetailViewModel
@@ -61,29 +65,28 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 onResultConsumed = { entry.consumeResultMessage() },
                 onEventClick = { id -> navController.navigate(EventDetail(id)) },
                 onSeeAllEvents = { navController.navigate(EventList()) },
-                onCategoryClick = { category -> navController.navigate(EventList(category.name)) },
+                onCategoryClick = { category -> navController.navigate(EventList(category.id)) },
                 onBottomNavClick = navController::navigateToTab,
                 onRetry = viewModel::loadEvents,
             )
         }
 
         composable<Categories> { entry ->
-            val viewModel: EventListViewModel = viewModel(entry)
+            val viewModel: CategoryListViewModel = viewModel(entry)
             val state by viewModel.uiState.collectAsStateWithLifecycle()
+            val result by entry.rememberResultMessage()
 
-            LaunchedEffect(Unit) { viewModel.start(EventListSource.ALL, null) }
+            LaunchedEffect(Unit) { viewModel.load() }
 
-            EventListScreen(
+            CategoryListScreen(
                 state = state,
-                showAsTab = true,
-                onBack = goBack,
-                onEventClick = { id -> navController.navigate(EventDetail(id)) },
+                resultMessage = result,
+                onResultConsumed = { entry.consumeResultMessage() },
+                onCategoryClick = { id -> navController.navigate(CategoryDetail(id)) },
+                onAddCategoryClick = { navController.navigate(CategoryForm()) },
                 onBottomNavClick = navController::navigateToTab,
-                onCategorySelect = viewModel::selectCategory,
-                onToggleFavorite = viewModel::toggleFavorite,
                 onRefresh = viewModel::refresh,
-                onRetry = { viewModel.start(EventListSource.ALL, null) },
-                onSnackbarDismissed = viewModel::snackbarShown,
+                onRetry = { viewModel.load() },
             )
         }
 
@@ -145,14 +148,56 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
             )
         }
 
+        // ====================== FITUR KATEGORI ======================
+        composable<CategoryDetail> { entry ->
+            val args = entry.toRoute<CategoryDetail>()
+            val viewModel: CategoryDetailViewModel = viewModel(entry)
+            val state by viewModel.uiState.collectAsStateWithLifecycle()
+            val result by entry.rememberResultMessage()
+
+            LaunchedEffect(args.categoryId) { viewModel.load(args.categoryId) }
+
+            CategoryDetailScreen(
+                state = state,
+                resultMessage = result,
+                onResultConsumed = { entry.consumeResultMessage() },
+                onBack = dropUnlessResumed(block = goBack),
+                onEditCategory = { id -> navController.navigate(CategoryForm(id)) },
+                onEventClick = { id -> navController.navigate(EventDetail(id)) },
+                onDelete = viewModel::delete,
+                onSnackbarDismissed = viewModel::errorShown,
+                onDeleted = { message -> navController.popWithResult(message) },
+                onRetry = { viewModel.load(args.categoryId) },
+            )
+        }
+
+        composable<CategoryForm> { entry ->
+            val args = entry.toRoute<CategoryForm>()
+            val viewModel: CategoryFormViewModel = viewModel(entry)
+            val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+            val categoryId = args.categoryId.takeIf { it != NO_ID }
+            LaunchedEffect(categoryId) { viewModel.init(categoryId) }
+
+            CategoryFormScreen(
+                state = state,
+                onBack = dropUnlessResumed(block = goBack),
+                onNameChange = viewModel::onNameChange,
+                onDescriptionChange = viewModel::onDescriptionChange,
+                onSubmit = viewModel::submit,
+                onErrorDismissed = viewModel::errorShown,
+                onSaved = { message -> navController.popWithResult(message) },
+            )
+        }
+
         // ======================= FITUR EVENT =======================
         composable<EventList> { entry ->
             val args = entry.toRoute<EventList>()
             val viewModel: EventListViewModel = viewModel(entry)
             val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-            val category = EventCategory.entries.firstOrNull { it.name == args.category }
-            LaunchedEffect(args.category) { viewModel.start(EventListSource.ALL, category) }
+            val categoryId = args.categoryId.takeIf { it != NO_ID }
+            LaunchedEffect(args.categoryId) { viewModel.start(EventListSource.ALL, categoryId) }
 
             EventListScreen(
                 state = state,
@@ -163,7 +208,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 onCategorySelect = viewModel::selectCategory,
                 onToggleFavorite = viewModel::toggleFavorite,
                 onRefresh = viewModel::refresh,
-                onRetry = { viewModel.start(EventListSource.ALL, category) },
+                onRetry = { viewModel.start(EventListSource.ALL, categoryId) },
                 onSnackbarDismissed = viewModel::snackbarShown,
             )
         }
