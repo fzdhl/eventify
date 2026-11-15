@@ -24,9 +24,6 @@ import com.example.tugasakhirpam.ui.components.InfoBadge
 import com.example.tugasakhirpam.ui.components.MessageState
 import com.example.tugasakhirpam.ui.components.PageHeader
 import com.example.tugasakhirpam.ui.event.EventListBody
-import com.example.tugasakhirpam.ui.event.EventListSource
-import com.example.tugasakhirpam.ui.event.EventListUiState
-import com.example.tugasakhirpam.ui.event.EventListViewModel
 import com.example.tugasakhirpam.ui.theme.AppBackground
 import com.example.tugasakhirpam.ui.theme.DangerBg
 import com.example.tugasakhirpam.ui.theme.DangerText
@@ -39,12 +36,12 @@ fun FavoritesScreen(
     onEventClick: (Long) -> Unit,
     onExploreClick: () -> Unit,
     onBottomNavClick: (BottomNavItem) -> Unit,
-    viewModel: EventListViewModel = viewModel(),
+    viewModel: FavoritesViewModel = viewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) { viewModel.start(EventListSource.FAVORITES) }
+    LaunchedEffect(Unit) { viewModel.loadFavorites() }
     LaunchedEffect(state.snackbarMessage) {
         state.snackbarMessage?.let {
             snackbarHostState.showSnackbar(it)
@@ -60,13 +57,13 @@ fun FavoritesScreen(
         onBottomNavClick = onBottomNavClick,
         onToggleFavorite = viewModel::toggleFavorite,
         onRefresh = viewModel::refresh,
-        onRetry = { viewModel.start(EventListSource.FAVORITES) },
+        onRetry = viewModel::loadFavorites,
     )
 }
 
 @Composable
 fun FavoritesContent(
-    state: EventListUiState,
+    state: FavoritesUiState,
     onEventClick: (Long) -> Unit,
     onExploreClick: () -> Unit,
     onBottomNavClick: (BottomNavItem) -> Unit,
@@ -121,7 +118,7 @@ fun FavoritesContent(
 private fun FavoritesContentPreview() {
     TugasAkhirPAMTheme {
         FavoritesContent(
-            state = EventListUiState(isLoading = false, events = SampleData.events.map { it.copy(isFavorite = true) }),
+            state = FavoritesUiState(isLoading = false, events = SampleData.events.map { it.copy(isFavorite = true) }),
             onEventClick = {},
             onExploreClick = {},
             onBottomNavClick = {},
