@@ -18,7 +18,13 @@ object Registrations
 object MyEvents
 
 @Serializable
-data class EventList(val category: String? = null)
+data class CategoryDetail(val categoryId: Long)
+
+@Serializable
+data class CategoryForm(val categoryId: Long = NO_ID)
+
+@Serializable
+data class EventList(val categoryId: Long = NO_ID)
 
 @Serializable
 data class EventDetail(val eventId: Long)

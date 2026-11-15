@@ -3,7 +3,9 @@ package com.example.tugasakhirpam.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tugasakhirpam.data.AppContainer
+import com.example.tugasakhirpam.data.CategoryRepository
 import com.example.tugasakhirpam.data.EventRepository
+import com.example.tugasakhirpam.model.Category
 import com.example.tugasakhirpam.model.Event
 import com.example.tugasakhirpam.model.User
 import com.example.tugasakhirpam.util.runSafely
@@ -19,6 +21,7 @@ data class HomeUiState(
     val isLoading: Boolean = true,
     val user: User = AppContainer.currentUser,
     val events: List<Event> = emptyList(),
+    val categories: List<Category> = emptyList(),
     val errorMessage: String? = null,
 ) {
     private val upcoming: List<Event> get() = events.filter { !it.isPast }
@@ -34,7 +37,7 @@ data class HomeUiState(
         if (q.isEmpty()) return emptyList()
         return upcoming.filter {
             it.title.contains(q, ignoreCase = true) ||
-                it.category.label.contains(q, ignoreCase = true) ||
+                it.categoryName.contains(q, ignoreCase = true) ||
                 it.location.contains(q, ignoreCase = true) ||
                 it.organizer.contains(q, ignoreCase = true)
         }
@@ -43,6 +46,7 @@ data class HomeUiState(
 
 class HomeViewModel(
     private val eventRepository: EventRepository = AppContainer.eventRepository,
+    private val categoryRepository: CategoryRepository = AppContainer.categoryRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -54,8 +58,10 @@ class HomeViewModel(
         if (loadJob?.isActive == true) return
         loadJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = it.events.isEmpty(), errorMessage = null) }
-            runSafely { eventRepository.getEvents() }
-                .onSuccess { events -> _uiState.update { it.copy(isLoading = false, events = events) } }
+            runSafely { eventRepository.getEvents() to categoryRepository.getCategories() }
+                .onSuccess { (events, categories) ->
+                    _uiState.update { it.copy(isLoading = false, events = events, categories = categories) }
+                }
                 .onFailure { e -> _uiState.update { it.copy(isLoading = false, errorMessage = e.toUserMessage()) } }
         }
     }

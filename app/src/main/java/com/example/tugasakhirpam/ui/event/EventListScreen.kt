@@ -2,9 +2,7 @@ package com.example.tugasakhirpam.ui.event
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -22,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.tugasakhirpam.model.Event
-import com.example.tugasakhirpam.model.EventCategory
 import com.example.tugasakhirpam.model.SampleData
 import com.example.tugasakhirpam.ui.components.AppBottomBar
 import com.example.tugasakhirpam.ui.components.BottomNavItem
@@ -49,7 +46,7 @@ fun EventListScreen(
     onBack: () -> Unit,
     onEventClick: (Long) -> Unit,
     onBottomNavClick: (BottomNavItem) -> Unit,
-    onCategorySelect: (EventCategory?) -> Unit,
+    onCategorySelect: (Long?) -> Unit,
     onToggleFavorite: (Long) -> Unit,
     onRefresh: () -> Unit,
     onRetry: () -> Unit,
@@ -80,13 +77,14 @@ fun EventListScreen(
                 PageHeader("Kategori", "Semua Event", "Temukan event sesuai minatmu")
             } else {
                 ScreenTopBar(
-                    state.selectedCategory?.label ?: "Semua Event",
+                    state.categories.firstOrNull { it.id == state.selectedCategoryId }?.name ?: "Semua Event",
                     onBack,
                     Modifier.padding(horizontal = 20.dp)
                 )
             }
             CategoryFilterRow(
-                selected = state.selectedCategory,
+                categories = state.categories,
+                selectedId = state.selectedCategoryId,
                 onSelect = onCategorySelect,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
@@ -94,7 +92,7 @@ fun EventListScreen(
                 isLoading = state.isLoading,
                 isRefreshing = state.isRefreshing,
                 errorMessage = state.errorMessage,
-                events = state.events,
+                events = state.filtered,
                 onRefresh = onRefresh,
                 onRetry = onRetry,
                 onEventClick = onEventClick,

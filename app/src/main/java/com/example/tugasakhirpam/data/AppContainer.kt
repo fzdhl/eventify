@@ -7,4 +7,5 @@ object AppContainer {
     val eventRepository: EventRepository by lazy { FakeEventRepository() }
     val registrationRepository: RegistrationRepository by lazy { FakeRegistrationRepository() }
     val reviewRepository: ReviewRepository by lazy { FakeReviewRepository() }
+    val categoryRepository: CategoryRepository by lazy { FakeCategoryRepository() }
 }

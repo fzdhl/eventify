@@ -74,14 +74,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.tugasakhirpam.model.EventCategory
+import com.example.tugasakhirpam.model.Category
 import com.example.tugasakhirpam.ui.components.EventImage
 import com.example.tugasakhirpam.ui.components.FormTextField
 import com.example.tugasakhirpam.ui.components.LoadingState
 import com.example.tugasakhirpam.ui.components.PickerField
 import com.example.tugasakhirpam.ui.components.PrimaryButton
 import com.example.tugasakhirpam.ui.components.ScreenTopBar
-import com.example.tugasakhirpam.ui.components.categoryIcon
+import com.example.tugasakhirpam.ui.components.iconForCategory
 import com.example.tugasakhirpam.ui.theme.AppBackground
 import com.example.tugasakhirpam.ui.theme.BrandBlue
 import com.example.tugasakhirpam.ui.theme.BrandBlueSoft
@@ -105,7 +105,7 @@ fun EventFormScreen(
     onBack: () -> Unit,
     onPosterSelected: (String) -> Unit,
     onTitleChange: (String) -> Unit,
-    onCategorySelected: (EventCategory) -> Unit,
+    onCategorySelected: (Long) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onDateSelected: (String) -> Unit,
     onStartTimeSelected: (String) -> Unit,
@@ -162,7 +162,8 @@ fun EventFormScreen(
 
     if (showCategorySheet) {
         CategoryPickerSheet(
-            selected = state.category,
+            categories = state.categories,
+            selectedId = state.categoryId,
             onSelect = {
                 onCategorySelected(it)
                 showCategorySheet = false
@@ -249,7 +250,7 @@ fun EventFormContent(
             )
             PickerField(
                 label = "Kategori",
-                value = state.category?.label.orEmpty(),
+                value = state.categories.firstOrNull { it.id == state.categoryId }?.name.orEmpty(),
                 placeholder = "Pilih kategori",
                 leadingIcon = Icons.Outlined.GridView,
                 trailingIcon = Icons.Outlined.ChevronRight,
@@ -404,8 +405,9 @@ private fun PosterPicker(posterUri: String?, onPick: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CategoryPickerSheet(
-    selected: EventCategory?,
-    onSelect: (EventCategory) -> Unit,
+    categories: List<Category>,
+    selectedId: Long?,
+    onSelect: (Long) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -419,8 +421,15 @@ private fun CategoryPickerSheet(
         ) {
             Text("Pilih kategori", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
             Spacer(Modifier.height(12.dp))
-            EventCategory.entries.forEach { category ->
-                val isSelected = category == selected
+            if (categories.isEmpty()) {
+                Text(
+                    "Belum ada kategori. Buat kategori dulu di tab Categories.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextSecondary
+                )
+            }
+            categories.forEach { category ->
+                val isSelected = category.id == selectedId
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -428,7 +437,7 @@ private fun CategoryPickerSheet(
                         .clip(RoundedCornerShape(12.dp))
                         .background(if (isSelected) BrandBlueSoft else SurfaceWhite)
                         .clickable {
-                            scope.launch { sheetState.hide() }.invokeOnCompletion { onSelect(category) }
+                            scope.launch { sheetState.hide() }.invokeOnCompletion { onSelect(category.id) }
                         }
                         .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -440,11 +449,11 @@ private fun CategoryPickerSheet(
                             .clip(RoundedCornerShape(10.dp))
                             .background(if (isSelected) SurfaceWhite else BrandBlueSoft)
                     ) {
-                        Icon(categoryIcon(category), null, tint = BrandBlue, modifier = Modifier.size(18.dp))
+                        Icon(iconForCategory(category.iconKey), null, tint = BrandBlue, modifier = Modifier.size(18.dp))
                     }
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        category.label,
+                        category.name,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                         color = TextPrimary,

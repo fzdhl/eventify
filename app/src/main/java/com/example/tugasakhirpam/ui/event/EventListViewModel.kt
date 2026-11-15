@@ -3,9 +3,10 @@ package com.example.tugasakhirpam.ui.event
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tugasakhirpam.data.AppContainer
+import com.example.tugasakhirpam.data.CategoryRepository
 import com.example.tugasakhirpam.data.EventRepository
+import com.example.tugasakhirpam.model.Category
 import com.example.tugasakhirpam.model.Event
-import com.example.tugasakhirpam.model.EventCategory
 import com.example.tugasakhirpam.util.runSafely
 import com.example.tugasakhirpam.util.toUserMessage
 import kotlinx.coroutines.Job
@@ -21,16 +22,18 @@ data class EventListUiState(
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val events: List<Event> = emptyList(),
-    val selectedCategory: EventCategory? = null,
+    val categories: List<Category> = emptyList(),
+    val selectedCategoryId: Long? = null,
     val errorMessage: String? = null,
     val snackbarMessage: String? = null,
 ) {
     val filtered: List<Event>
-        get() = if (selectedCategory == null) events else events.filter { it.category == selectedCategory }
+        get() = if (selectedCategoryId == null) events else events.filter { it.categoryId == selectedCategoryId }
 }
 
 class EventListViewModel(
     private val repository: EventRepository = AppContainer.eventRepository,
+    private val categoryRepository: CategoryRepository = AppContainer.categoryRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EventListUiState())
@@ -40,18 +43,18 @@ class EventListViewModel(
     private var initialized = false
     private var loadJob: Job? = null
 
-    fun start(source: EventListSource, initialCategory: EventCategory? = null) {
+    fun start(source: EventListSource, initialCategoryId: Long? = null) {
         if (!initialized) {
             initialized = true
             this.source = source
-            _uiState.update { it.copy(selectedCategory = initialCategory) }
+            _uiState.update { it.copy(selectedCategoryId = initialCategoryId) }
         }
         fetch(isRefresh = false)
     }
 
     fun refresh() = fetch(isRefresh = true)
 
-    fun selectCategory(category: EventCategory?) = _uiState.update { it.copy(selectedCategory = category) }
+    fun selectCategory(categoryId: Long?) = _uiState.update { it.copy(selectedCategoryId = categoryId) }
 
     fun snackbarShown() = _uiState.update { it.copy(snackbarMessage = null) }
 
@@ -92,13 +95,16 @@ class EventListViewModel(
                 )
             }
             runSafely {
-                when (source) {
+                val events = when (source) {
                     EventListSource.ALL -> repository.getEvents().filter { !it.isPast }
                     EventListSource.FAVORITES -> repository.getFavoriteEvents()
                     EventListSource.MY_EVENTS -> repository.getMyEvents()
                 }
-            }.onSuccess { events ->
-                _uiState.update { it.copy(isLoading = false, isRefreshing = false, events = events) }
+                events to categoryRepository.getCategories()
+            }.onSuccess { (events, categories) ->
+                _uiState.update {
+                    it.copy(isLoading = false, isRefreshing = false, events = events, categories = categories)
+                }
             }.onFailure { e ->
                 _uiState.update { it.copy(isLoading = false, isRefreshing = false, errorMessage = e.toUserMessage()) }
             }

@@ -48,7 +48,7 @@ class FakeEventRepository : EventRepository {
         db.events += Event(
             id = id,
             title = input.title,
-            category = input.category,
+            categoryId = input.categoryId,
             organizer = db.currentUser.name,
             createdBy = userId,
             eventDate = input.eventDate,
@@ -74,7 +74,7 @@ class FakeEventRepository : EventRepository {
 
             db.events[index] = current.copy(
                 title = input.title,
-                category = input.category,
+                categoryId = input.categoryId,
                 description = input.description,
                 eventDate = input.eventDate,
                 startTime = input.startTime,
