@@ -24,6 +24,8 @@ import com.example.tugasakhirpam.ui.home.HomeScreen
 import com.example.tugasakhirpam.ui.registration.RegistrationDetailScreen
 import com.example.tugasakhirpam.ui.registration.RegistrationFormScreen
 import com.example.tugasakhirpam.ui.registration.RegistrationListScreen
+import com.example.tugasakhirpam.ui.review.ReviewFormScreen
+import com.example.tugasakhirpam.ui.review.ReviewListScreen
 
 @Composable
 fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) {
@@ -105,6 +107,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 onRegisterClick = { eventId -> navController.navigate(RegistrationForm(eventId = eventId)) },
                 onViewRegistration = { id -> navController.navigate(RegistrationDetail(id)) { launchSingleTop = true } },
                 onEditEvent = { eventId -> navController.navigate(EventForm(eventId)) },
+                onViewReviews = { eventId -> navController.navigate(Reviews(eventId)) },
                 onDeleted = { message -> navController.popWithResult(message) },
             )
         }
@@ -128,6 +131,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 onBack = dropUnlessResumed(block = goBack),
                 onEdit = { id -> navController.navigate(RegistrationForm(registrationId = id)) },
                 onViewEvent = { eventId -> navController.navigate(EventDetail(eventId)) { launchSingleTop = true } },
+                onViewReviews = { eventId -> navController.navigate(Reviews(eventId)) },
                 onDeleted = { message -> navController.popWithResult(message) },
             )
         }
@@ -137,6 +141,29 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
             RegistrationFormScreen(
                 eventId = args.eventId.takeIf { it != NO_ID },
                 registrationId = args.registrationId.takeIf { it != NO_ID },
+                onBack = dropUnlessResumed(block = goBack),
+                onSaved = { message -> navController.popWithResult(message) },
+            )
+        }
+
+        composable<Reviews> { entry ->
+            val args = entry.toRoute<Reviews>()
+            val result by entry.rememberResultMessage()
+            ReviewListScreen(
+                eventId = args.eventId,
+                resultMessage = result,
+                onResultConsumed = { entry.consumeResultMessage() },
+                onBack = dropUnlessResumed(block = goBack),
+                onWriteReview = { navController.navigate(ReviewForm(eventId = args.eventId)) },
+                onEditReview = { reviewId -> navController.navigate(ReviewForm(args.eventId, reviewId)) },
+            )
+        }
+
+        composable<ReviewForm> { entry ->
+            val args = entry.toRoute<ReviewForm>()
+            ReviewFormScreen(
+                eventId = args.eventId,
+                reviewId = args.reviewId.takeIf { it != NO_ID },
                 onBack = dropUnlessResumed(block = goBack),
                 onSaved = { message -> navController.popWithResult(message) },
             )

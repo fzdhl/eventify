@@ -10,19 +10,13 @@ import com.example.tugasakhirpam.model.Event
 import java.time.LocalDateTime
 import java.time.ZoneId
 
-/**
- * Implicit Intent (Modul 3): membuka aplikasi lain tanpa menyebut nama aplikasinya.
- * Setiap fungsi mengembalikan false jika tidak ada aplikasi yang bisa menanganinya.
- */
 object IntentHelper {
 
-    /** Buka lokasi event di aplikasi peta. */
     fun openMaps(context: Context, location: String): Boolean {
         val intent = Intent(Intent.ACTION_VIEW, ("geo:0,0?q=" + Uri.encode(location)).toUri())
         return launch(context, intent)
     }
 
-    /** Bagikan info event lewat WhatsApp, Telegram, dll. */
     fun shareEvent(context: Context, event: Event): Boolean {
         val text = buildString {
             appendLine("Yuk ikut ${event.title}!")
@@ -38,7 +32,6 @@ object IntentHelper {
         return launch(context, Intent.createChooser(send, "Bagikan event"))
     }
 
-    /** Simpan jadwal event ke aplikasi Kalender. */
     fun addToCalendar(context: Context, event: Event): Boolean {
         val date = DateFormatter.parseDate(event.eventDate) ?: return false
         val start = DateFormatter.parseTime(event.startTime) ?: return false
@@ -54,6 +47,22 @@ object IntentHelper {
             putExtra(CalendarContract.Events.DESCRIPTION, event.description)
         }
         return launch(context, intent)
+    }
+
+    fun dialPhone(context: Context, phone: String): Boolean {
+        val intent = Intent(Intent.ACTION_DIAL).apply {
+            data = "tel:$phone".toUri()
+        }
+        return launch(context, intent)
+    }
+
+    fun sendEmail(context: Context, email: String, subject: String): Boolean {
+        val intent = Intent(Intent.ACTION_SENDTO).apply {
+            data = "mailto:$email".toUri()
+            putExtra(Intent.EXTRA_SUBJECT, subject)
+        }
+        val chooser = Intent.createChooser(intent, "Pilih aplikasi email")
+        return launch(context, chooser)
     }
 
     private fun launch(context: Context, intent: Intent): Boolean =

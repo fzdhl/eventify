@@ -27,3 +27,7 @@ val DangerText = Color(0xFFDC2626)
 val DangerBg = Color(0xFFFDECEC)
 val WarningText = Color(0xFFD97706)
 val WarningBg = Color(0xFFFEF4E2)
+
+// Rating
+val StarYellow = Color(0xFFF59E0B)
+val StarEmpty = Color(0xFFD9DEE7)

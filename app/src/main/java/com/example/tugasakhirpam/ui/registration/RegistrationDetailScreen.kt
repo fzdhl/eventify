@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
+import androidx.compose.material.icons.outlined.RateReview
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.HorizontalDivider
@@ -94,6 +95,7 @@ fun RegistrationDetailScreen(
     onBack: () -> Unit,
     onEdit: (Long) -> Unit,
     onViewEvent: (Long) -> Unit,
+    onViewReviews: (Long) -> Unit,
     onDeleted: (String) -> Unit,
     viewModel: RegistrationDetailViewModel = viewModel(),
 ) {
@@ -128,6 +130,7 @@ fun RegistrationDetailScreen(
         onRetry = { viewModel.load(registrationId) },
         onEdit = { onEdit(registrationId) },
         onViewEvent = onViewEvent,
+        onViewReviews = onViewReviews,
         onCancel = { showCancelDialog = true },
         onReRegister = viewModel::reRegister,
         onDelete = { showDeleteDialog = true },
@@ -166,6 +169,7 @@ fun RegistrationDetailContent(
     onRetry: () -> Unit,
     onEdit: () -> Unit,
     onViewEvent: (Long) -> Unit,
+    onViewReviews: (Long) -> Unit,
     onCancel: () -> Unit,
     onReRegister: () -> Unit,
     onDelete: () -> Unit,
@@ -183,6 +187,7 @@ fun RegistrationDetailContent(
                     isProcessing = state.isProcessing,
                     onEdit = onEdit,
                     onViewEvent = { onViewEvent(registration.eventId) },
+                    onViewReviews = { onViewReviews(registration.eventId) },
                     onCancel = onCancel,
                     onReRegister = onReRegister,
                     onDelete = onDelete,
@@ -291,7 +296,7 @@ private fun StatusInfoCard(registration: Registration) {
         registration.status == RegistrationStatus.CANCELLED ->
             if (isPast) "Pendaftaran dibatalkan dan event sudah selesai."
             else "Pendaftaran dibatalkan. Kamu bisa daftar ulang selama kuota masih tersedia."
-        isPast -> "Event sudah selesai. Terima kasih sudah berpartisipasi!"
+        isPast -> "Event sudah selesai. Terima kasih sudah ikut! Bagikan pengalamanmu lewat ulasan."
         registration.status == RegistrationStatus.PENDING -> "Menunggu konfirmasi dari penyelenggara event."
         else -> "Pendaftaranmu sudah dikonfirmasi. Datang 15 menit sebelum acara dimulai, ya!"
     }
@@ -347,6 +352,7 @@ private fun DetailActionBar(
     isProcessing: Boolean,
     onEdit: () -> Unit,
     onViewEvent: () -> Unit,
+    onViewReviews: () -> Unit,
     onCancel: () -> Unit,
     onReRegister: () -> Unit,
     onDelete: () -> Unit,
@@ -372,7 +378,11 @@ private fun DetailActionBar(
                             contentColor = DangerText,
                             modifier = Modifier.weight(1f)
                         )
-                        PrimaryButton("Lihat Event", onViewEvent, Modifier.weight(1f), icon = Icons.Outlined.Event)
+                        if (registration.status == RegistrationStatus.CONFIRMED) {
+                            PrimaryButton("Beri Ulasan", onViewReviews, Modifier.weight(1f), icon = Icons.Outlined.RateReview)
+                        } else {
+                            PrimaryButton("Lihat Event", onViewEvent, Modifier.weight(1f), icon = Icons.Outlined.Event)
+                        }
                     }
                     Spacer(Modifier.height(12.dp))
                 }
@@ -435,6 +445,7 @@ private fun RegistrationDetailContentPreview() {
             onRetry = {},
             onEdit = {},
             onViewEvent = {},
+            onViewReviews = {},
             onCancel = {},
             onReRegister = {},
             onDelete = {},

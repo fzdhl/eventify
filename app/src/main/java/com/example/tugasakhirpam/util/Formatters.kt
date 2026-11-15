@@ -1,6 +1,7 @@
 package com.example.tugasakhirpam.util
 
 import java.io.IOException
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -52,6 +53,20 @@ object DateFormatter {
                 OffsetDateTime.parse(it).atZoneSameInstant(ZoneId.systemDefault()).format(timestampFormat)
             }.getOrNull()
         } ?: "-"
+
+    fun relative(raw: String?): String {
+        val time = raw?.let { runCatching { OffsetDateTime.parse(it) }.getOrNull() } ?: return "-"
+        val diff = Duration.between(time, OffsetDateTime.now())
+        return when {
+            diff.toMinutes() < 1 -> "Baru saja"
+            diff.toHours() < 1 -> "${diff.toMinutes()} menit lalu"
+            diff.toDays() < 1 -> "${diff.toHours()} jam lalu"
+            diff.toDays() < 30 -> "${diff.toDays()} hari lalu"
+            else -> short(raw)
+        }
+    }
+
+    fun rating(value: Double): String = String.format(Locale.ROOT, "%.1f", value)
 
     fun isUpcoming(raw: String?): Boolean =
         parseDate(raw)?.let { !it.isBefore(LocalDate.now()) } ?: true

@@ -4,6 +4,7 @@ import com.example.tugasakhirpam.model.Event
 import com.example.tugasakhirpam.model.EventCategory
 import com.example.tugasakhirpam.model.Registration
 import com.example.tugasakhirpam.model.RegistrationStatus
+import com.example.tugasakhirpam.model.Review
 import com.example.tugasakhirpam.model.User
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -100,10 +101,18 @@ internal object FakeDataSource {
             description = "Tips menyiapkan CV, wawancara, dan peluang magang di perusahaan teknologi.",
             imageUrl = "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800",
         ),
+        Event(
+            id = 9, title = "Workshop Git & GitHub untuk Pemula", category = EventCategory.WORKSHOP,
+            organizer = "Google Developer Student Club", createdBy = "u-092",
+            eventDate = day(-20), startTime = "13:00", endTime = "16:00",
+            location = "Lab Komputer 1", quota = 40,
+            description = "Belajar version control dari nol: commit, branch, merge, hingga kolaborasi di GitHub.",
+            imageUrl = "https://images.unsplash.com/photo-1556075798-4825dfaaf498?w=800",
+        ),
     )
 
     private val otherParticipants = mutableMapOf(
-        1L to 107, 2L to 25, 3L to 40, 4L to 80, 5L to 30, 6L to 63, 8L to 95,
+        1L to 107, 2L to 25, 3L to 40, 4L to 80, 5L to 30, 6L to 63, 8L to 95, 9L to 35,
     )
 
     val registrations = mutableListOf(
@@ -121,19 +130,44 @@ internal object FakeDataSource {
             "+6281233334444", RegistrationStatus.CONFIRMED, createdAt(2)),
         Registration(7, 7, "u-103", "Siti Nurhaliza", "221053333", "siti@univ.ac.id",
             "+6281255556666", RegistrationStatus.CONFIRMED, createdAt(4)),
+        Registration(8, 9, "u-001", "Aditya Pratama", "221051234", "aditya.pratama@univ.ac.id",
+            "+6281234567890", RegistrationStatus.CONFIRMED, createdAt(30)),
+    )
+
+    val reviews = mutableListOf(
+        Review(1, 8, "u-201", "Nadia Putri", 5,
+            "Materinya relevan dan pembicaranya sangat inspiratif. Wajib ikut lagi!", createdAt(2)),
+        Review(2, 8, "u-202", "Rizky Ananda", 4,
+            "Event terorganisir dengan baik, hanya antrean registrasinya cukup panjang.", createdAt(2)),
+        Review(3, 8, "u-001", "Aditya Pratama", 5,
+            "Banyak insight baru tentang persiapan karier dan magang di industri.", createdAt(2)),
+        Review(4, 8, "u-203", "Dimas Prasetyo", 3,
+            "Isinya bagus, tapi sesi tanya jawab terlalu singkat.", createdAt(4)),
+        Review(5, 8, "u-204", "Laras Wulandari", 5,
+            "Pembicaranya ramah dan memberi contoh CV yang nyata. Sangat membantu!", createdAt(5)),
+        Review(6, 9, "u-205", "Fajar Nugroho", 4,
+            "Penjelasannya runtut, cocok untuk yang baru pertama kali pakai Git.", createdAt(15)),
     )
 
     val favoriteEventIds = mutableSetOf(2L)
 
-    var nextEventId = 9L
-    var nextRegistrationId = 8L
+    var nextEventId = 10L
+    var nextRegistrationId = 9L
+    var nextReviewId = 7L
 
     fun activeCount(eventId: Long): Int =
         (otherParticipants[eventId] ?: 0) +
             registrations.count { it.eventId == eventId && it.isActive }
 
-    fun withState(event: Event): Event =
-        event.copy(registeredCount = activeCount(event.id), isFavorite = event.id in favoriteEventIds)
+    fun withState(event: Event): Event {
+        val eventReviews = reviews.filter { it.eventId == event.id }
+        return event.copy(
+            registeredCount = activeCount(event.id),
+            isFavorite = event.id in favoriteEventIds,
+            ratingAverage = if (eventReviews.isEmpty()) 0.0 else eventReviews.map { it.rating }.average(),
+            reviewCount = eventReviews.size,
+        )
+    }
 
     fun findEvent(id: Long): Event =
         events.firstOrNull { it.id == id }?.let(::withState)
@@ -145,6 +179,7 @@ internal object FakeDataSource {
     fun removeEventData(eventId: Long) {
         events.removeAll { it.id == eventId }
         registrations.removeAll { it.eventId == eventId }
+        reviews.removeAll { it.eventId == eventId }
         favoriteEventIds.remove(eventId)
         otherParticipants.remove(eventId)
     }

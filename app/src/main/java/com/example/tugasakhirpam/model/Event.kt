@@ -25,6 +25,8 @@ data class Event(
     val imageUrl: String? = null,
     val isFeatured: Boolean = false,
     val isFavorite: Boolean = false,
+    val ratingAverage: Double = 0.0,
+    val reviewCount: Int = 0,
 ) {
     val remainingQuota: Int get() = (quota - registeredCount).coerceAtLeast(0)
     val isFull: Boolean get() = remainingQuota == 0

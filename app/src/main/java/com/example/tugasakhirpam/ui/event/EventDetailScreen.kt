@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.ChevronLeft
@@ -87,6 +88,7 @@ import com.example.tugasakhirpam.ui.theme.BrandBlueSoftBorder
 import com.example.tugasakhirpam.ui.theme.DangerBg
 import com.example.tugasakhirpam.ui.theme.DangerText
 import com.example.tugasakhirpam.ui.theme.SegmentTrack
+import com.example.tugasakhirpam.ui.theme.StarYellow
 import com.example.tugasakhirpam.ui.theme.SurfaceWhite
 import com.example.tugasakhirpam.ui.theme.TextMuted
 import com.example.tugasakhirpam.ui.theme.TextPrimary
@@ -105,6 +107,7 @@ fun EventDetailScreen(
     onRegisterClick: (Long) -> Unit,
     onViewRegistration: (Long) -> Unit,
     onEditEvent: (Long) -> Unit,
+    onViewReviews: (Long) -> Unit,
     onDeleted: (String) -> Unit,
     viewModel: EventDetailViewModel = viewModel(),
 ) {
@@ -150,6 +153,7 @@ fun EventDetailScreen(
         onRegisterClick = { onRegisterClick(eventId) },
         onViewRegistration = onViewRegistration,
         onEditEvent = { onEditEvent(eventId) },
+        onViewReviews = { onViewReviews(eventId) },
         onDeleteClick = { showDeleteDialog = true },
         onParticipantClick = { participantToEdit = it },
     )
@@ -180,7 +184,13 @@ fun EventDetailScreen(
                 participantToEdit = null
                 if (status != participant.status) viewModel.updateParticipantStatus(participant.id, status)
             },
-            onDismiss = { participantToEdit = null }
+            onDismiss = { participantToEdit = null },
+            onCall = { launchIntent(IntentHelper.dialPhone(context, participant.phone)) },
+            onEmail = {
+                launchIntent(
+                    IntentHelper.sendEmail(context, participant.email, "Info event ${state.event?.title.orEmpty()}")
+                )
+            },
         )
     }
 }
@@ -197,6 +207,7 @@ fun EventDetailContent(
     onRegisterClick: () -> Unit,
     onViewRegistration: (Long) -> Unit,
     onEditEvent: () -> Unit,
+    onViewReviews: () -> Unit,
     onDeleteClick: () -> Unit,
     onParticipantClick: (Registration) -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
@@ -244,6 +255,9 @@ fun EventDetailContent(
                         EventInfoSection(event = event, isOwner = state.isOwner)
 
                         Spacer(Modifier.height(16.dp))
+                        RatingRow(event = event, onClick = onViewReviews)
+
+                        Spacer(Modifier.height(10.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             QuickActionChip(Icons.Outlined.CalendarMonth, "Simpan ke Kalender", Modifier.weight(1f)) {
                                 onAddToCalendar(event)
@@ -405,6 +419,37 @@ private fun QuickActionChip(icon: ImageVector, label: String, modifier: Modifier
 }
 
 @Composable
+private fun RatingRow(event: Event, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = SurfaceWhite,
+        border = BorderStroke(1.dp, BorderSoft),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.Star, null, tint = StarYellow, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            if (event.reviewCount > 0) {
+                Text(
+                    DateFormatter.rating(event.ratingAverage),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = StarYellow
+                )
+                Spacer(Modifier.width(6.dp))
+                Text("${event.reviewCount} ulasan", fontSize = 11.sp, color = TextSecondary)
+            } else {
+                Text("Belum ada ulasan", fontSize = 12.sp, color = TextSecondary)
+            }
+            Spacer(Modifier.weight(1f))
+            Text("Lihat ulasan", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+            Icon(Icons.Outlined.ChevronRight, null, tint = TextPrimary, modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
+@Composable
 private fun RegisteredBanner(registration: Registration, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
@@ -441,7 +486,7 @@ private fun ParticipantSection(
         color = TextPrimary
     )
     Spacer(Modifier.height(4.dp))
-    Text("Ketuk peserta untuk mengubah status pendaftarannya.", fontSize = 11.sp, color = TextSecondary)
+    Text("Ketuk peserta untuk menghubungi atau mengubah statusnya.", fontSize = 11.sp, color = TextSecondary)
     Spacer(Modifier.height(12.dp))
 
     Surface(
@@ -580,6 +625,7 @@ private fun EventDetailContentPreview() {
             onRegisterClick = {},
             onViewRegistration = {},
             onEditEvent = {},
+            onViewReviews = {},
             onDeleteClick = {},
             onParticipantClick = {},
         )

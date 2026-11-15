@@ -19,9 +19,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -138,16 +140,16 @@ fun IconText(icon: ImageVector, text: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun UserAvatar(initials: String, modifier: Modifier = Modifier) {
+fun UserAvatar(initials: String, modifier: Modifier = Modifier, size: androidx.compose.ui.unit.Dp = 46.dp) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .size(46.dp)
+            .size(size)
             .shadow(6.dp, CircleShape, ambientColor = BrandBlue, spotColor = BrandBlue)
             .clip(CircleShape)
             .background(Brush.linearGradient(listOf(BrandBlueLight, BrandBlue, BrandBlueDark)))
     ) {
-        Text(initials, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Text(initials, color = Color.White, fontWeight = FontWeight.Bold, fontSize = (size.value * 0.32f).sp)
     }
 }
 
@@ -432,6 +434,8 @@ fun StatusPickerSheet(
     current: RegistrationStatus,
     onSelect: (RegistrationStatus) -> Unit,
     onDismiss: () -> Unit,
+    onCall: (() -> Unit)? = null,
+    onEmail: (() -> Unit)? = null,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -442,10 +446,25 @@ fun StatusPickerSheet(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 28.dp)
         ) {
-            Text("Ubah status peserta", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+            Text("Kelola peserta", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
             Spacer(Modifier.height(4.dp))
             Text(title, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+
+            if (onCall != null || onEmail != null) {
+                Spacer(Modifier.height(16.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (onCall != null) {
+                        SecondaryButton("Telepon", onCall, Modifier.weight(1f), icon = Icons.Outlined.Call)
+                    }
+                    if (onEmail != null) {
+                        SecondaryButton("Email", onEmail, Modifier.weight(1f), icon = Icons.Outlined.Email)
+                    }
+                }
+            }
+
             Spacer(Modifier.height(16.dp))
+            Text("Ubah status", style = MaterialTheme.typography.labelMedium, color = TextPrimary)
+            Spacer(Modifier.height(8.dp))
 
             RegistrationStatus.entries.forEach { status ->
                 val selected = status == current

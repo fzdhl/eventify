@@ -35,6 +35,15 @@ data class RegistrationForm(
     val registrationId: Long = NO_ID,
 )
 
+@Serializable
+data class Reviews(val eventId: Long)
+
+@Serializable
+data class ReviewForm(
+    val eventId: Long,
+    val reviewId: Long = NO_ID,
+)
+
 const val NO_ID = -1L
 
 const val RESULT_MESSAGE_KEY = "result_message"
