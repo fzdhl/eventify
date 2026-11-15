@@ -52,8 +52,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tugasakhirpam.model.Event
 import com.example.tugasakhirpam.model.Review
 import com.example.tugasakhirpam.model.SampleData
@@ -81,20 +79,19 @@ import java.time.OffsetDateTime
 
 @Composable
 fun ReviewListScreen(
-    eventId: Long,
+    state: ReviewListUiState,
     resultMessage: String?,
     onResultConsumed: () -> Unit,
     onBack: () -> Unit,
+    onRatingSelect: (Int?) -> Unit,
     onWriteReview: () -> Unit,
     onEditReview: (Long) -> Unit,
-    viewModel: ReviewListViewModel = viewModel(),
+    onDeleteReview: (Long) -> Unit,
+    onSnackbarDismissed: () -> Unit,
+    onRetry: () -> Unit,
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-
     var reviewToDelete by rememberSaveable { mutableStateOf<Long?>(null) }
-
-    LaunchedEffect(eventId) { viewModel.load(eventId) }
 
     LaunchedEffect(resultMessage) {
         resultMessage?.let {
@@ -105,7 +102,7 @@ fun ReviewListScreen(
     LaunchedEffect(state.snackbarMessage) {
         state.snackbarMessage?.let {
             snackbarHostState.showSnackbar(it)
-            viewModel.snackbarShown()
+            onSnackbarDismissed()
         }
     }
 
@@ -113,8 +110,8 @@ fun ReviewListScreen(
         state = state,
         snackbarHostState = snackbarHostState,
         onBack = onBack,
-        onRetry = { viewModel.load(eventId) },
-        onRatingSelect = viewModel::selectRating,
+        onRetry = onRetry,
+        onRatingSelect = onRatingSelect,
         onWriteReview = onWriteReview,
         onEditReview = onEditReview,
         onDeleteReview = { reviewToDelete = it },
@@ -127,7 +124,7 @@ fun ReviewListScreen(
             confirmText = "Hapus",
             onConfirm = {
                 reviewToDelete = null
-                viewModel.deleteReview(id)
+                onDeleteReview(id)
             },
             onDismiss = { reviewToDelete = null }
         )

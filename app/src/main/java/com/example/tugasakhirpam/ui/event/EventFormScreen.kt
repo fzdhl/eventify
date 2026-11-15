@@ -74,8 +74,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tugasakhirpam.model.EventCategory
 import com.example.tugasakhirpam.ui.components.EventImage
 import com.example.tugasakhirpam.ui.components.FormTextField
@@ -103,12 +101,21 @@ private enum class TimeField { START, END }
 
 @Composable
 fun EventFormScreen(
-    eventId: Long?,
+    state: EventFormUiState,
     onBack: () -> Unit,
+    onPosterSelected: (String) -> Unit,
+    onTitleChange: (String) -> Unit,
+    onCategorySelected: (EventCategory) -> Unit,
+    onDescriptionChange: (String) -> Unit,
+    onDateSelected: (String) -> Unit,
+    onStartTimeSelected: (String) -> Unit,
+    onEndTimeSelected: (String) -> Unit,
+    onLocationChange: (String) -> Unit,
+    onQuotaChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+    onErrorDismissed: () -> Unit,
     onSaved: (String) -> Unit,
-    viewModel: EventFormViewModel = viewModel(),
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -121,15 +128,14 @@ fun EventFormScreen(
             runCatching {
                 context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            viewModel.onPosterSelected(uri.toString())
+            onPosterSelected(uri.toString())
         }
     }
 
-    LaunchedEffect(Unit) { viewModel.init(eventId) }
     LaunchedEffect(state.errorMessage) {
         state.errorMessage?.let {
             snackbarHostState.showSnackbar(it)
-            viewModel.errorShown()
+            onErrorDismissed()
         }
     }
     LaunchedEffect(state.successMessage) {
@@ -143,22 +149,22 @@ fun EventFormScreen(
         onPickPoster = {
             posterPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         },
-        onTitleChange = viewModel::onTitleChange,
+        onTitleChange = onTitleChange,
         onCategoryClick = { showCategorySheet = true },
-        onDescriptionChange = viewModel::onDescriptionChange,
+        onDescriptionChange = onDescriptionChange,
         onDateClick = { showDatePicker = true },
         onStartTimeClick = { timeField = TimeField.START },
         onEndTimeClick = { timeField = TimeField.END },
-        onLocationChange = viewModel::onLocationChange,
-        onQuotaChange = viewModel::onQuotaChange,
-        onSubmit = viewModel::submit,
+        onLocationChange = onLocationChange,
+        onQuotaChange = onQuotaChange,
+        onSubmit = onSubmit,
     )
 
     if (showCategorySheet) {
         CategoryPickerSheet(
             selected = state.category,
             onSelect = {
-                viewModel.onCategorySelected(it)
+                onCategorySelected(it)
                 showCategorySheet = false
             },
             onDismiss = { showCategorySheet = false }
@@ -169,7 +175,7 @@ fun EventFormScreen(
         EventDatePickerDialog(
             initialDate = state.eventDate,
             onConfirm = {
-                viewModel.onDateSelected(it)
+                onDateSelected(it)
                 showDatePicker = false
             },
             onDismiss = { showDatePicker = false }
@@ -181,7 +187,7 @@ fun EventFormScreen(
             title = if (field == TimeField.START) "Waktu mulai" else "Waktu selesai",
             initialTime = if (field == TimeField.START) state.startTime else state.endTime,
             onConfirm = { time ->
-                if (field == TimeField.START) viewModel.onStartTimeSelected(time) else viewModel.onEndTimeSelected(time)
+                if (field == TimeField.START) onStartTimeSelected(time) else onEndTimeSelected(time)
                 timeField = null
             },
             onDismiss = { timeField = null }

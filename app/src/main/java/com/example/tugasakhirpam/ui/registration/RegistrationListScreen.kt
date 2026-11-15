@@ -1,71 +1,52 @@
 package com.example.tugasakhirpam.ui.registration
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.ConfirmationNumber
-import androidx.compose.material.icons.outlined.EventBusy
+import androidx.compose.material.icons.outlined.AssignmentTurnedIn
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tugasakhirpam.model.SampleData
 import com.example.tugasakhirpam.ui.components.AppBottomBar
 import com.example.tugasakhirpam.ui.components.BottomNavItem
 import com.example.tugasakhirpam.ui.components.ErrorState
-import com.example.tugasakhirpam.ui.components.EventCard
-import com.example.tugasakhirpam.ui.components.InfoBadge
 import com.example.tugasakhirpam.ui.components.LoadingState
 import com.example.tugasakhirpam.ui.components.MessageState
 import com.example.tugasakhirpam.ui.components.PageHeader
+import com.example.tugasakhirpam.ui.components.RegistrationCard
 import com.example.tugasakhirpam.ui.components.SegmentedTabs
-import com.example.tugasakhirpam.ui.components.StatusBadge
 import com.example.tugasakhirpam.ui.theme.AppBackground
-import com.example.tugasakhirpam.ui.theme.BrandBlue
-import com.example.tugasakhirpam.ui.theme.SegmentTrack
-import com.example.tugasakhirpam.ui.theme.TextSecondary
 import com.example.tugasakhirpam.ui.theme.TugasAkhirPAMTheme
 
 @Composable
 fun RegistrationListScreen(
+    state: RegistrationListUiState,
     resultMessage: String?,
     onResultConsumed: () -> Unit,
+    onTabSelect: (RegistrationTab) -> Unit,
     onRegistrationClick: (Long) -> Unit,
     onAddRegistrationClick: () -> Unit,
     onBottomNavClick: (BottomNavItem) -> Unit,
-    viewModel: RegistrationListViewModel = viewModel(),
+    onRefresh: () -> Unit,
+    onRetry: () -> Unit,
+    onErrorDismissed: () -> Unit,
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-
-    LaunchedEffect(Unit) { viewModel.loadRegistrations() }
 
     LaunchedEffect(resultMessage) {
         resultMessage?.let {
@@ -74,22 +55,21 @@ fun RegistrationListScreen(
         }
     }
     LaunchedEffect(state.errorMessage) {
-        val msg = state.errorMessage
-        if (msg != null && state.registrations.isNotEmpty()) {
-            snackbarHostState.showSnackbar(msg)
-            viewModel.errorShown()
+        state.errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            onErrorDismissed()
         }
     }
 
     RegistrationListContent(
         state = state,
         snackbarHostState = snackbarHostState,
-        onTabSelect = viewModel::selectTab,
+        onTabSelect = onTabSelect,
         onRegistrationClick = onRegistrationClick,
         onAddRegistrationClick = onAddRegistrationClick,
         onBottomNavClick = onBottomNavClick,
-        onRefresh = viewModel::refresh,
-        onRetry = viewModel::loadRegistrations,
+        onRefresh = onRefresh,
+        onRetry = onRetry,
     )
 }
 
@@ -105,86 +85,58 @@ fun RegistrationListContent(
     onRetry: () -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
+    val tabs = remember { RegistrationTab.entries.map { it.label } }
+
     Scaffold(
         containerColor = AppBackground,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = { AppBottomBar(BottomNavItem.REGISTRATIONS, onBottomNavClick) },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onAddRegistrationClick,
-                containerColor = BrandBlue,
-                contentColor = Color.White,
-                shape = RoundedCornerShape(14.dp),
-                icon = { Icon(Icons.Outlined.Add, null) },
-                text = { Text("Daftar Event", style = MaterialTheme.typography.labelLarge) }
-            )
-        }
     ) { innerPadding ->
         Column(
             Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            PageHeader("Event Kamu", "My Registrations", "Pantau semua pendaftaran eventmu")
-
+            PageHeader("Riwayat", "My Registrations", "Pantau status pendaftaran event kamu")
             SegmentedTabs(
-                tabs = RegistrationTab.entries.map {
-                    if (state.isLoading) it.label else "${it.label} (${state.countFor(it)})"
-                },
+                tabs = tabs,
                 selectedIndex = state.selectedTab.ordinal,
                 onSelect = { onTabSelect(RegistrationTab.entries[it]) },
                 modifier = Modifier.padding(horizontal = 20.dp)
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(12.dp))
 
-            PullToRefreshBox(
-                isRefreshing = state.isRefreshing,
-                onRefresh = onRefresh,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                when {
-                    state.isLoading -> LoadingState()
-
-                    state.errorMessage != null && state.registrations.isEmpty() ->
-                        ErrorState(state.errorMessage, onRetry)
-
-                    else -> LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 96.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        if (state.filtered.isEmpty()) {
-                            item(key = "empty") {
-                                val cancelledTab = state.selectedTab == RegistrationTab.CANCELLED
-                                Box(Modifier.fillParentMaxHeight(0.75f), contentAlignment = Alignment.Center) {
-                                    MessageState(
-                                        icon = if (cancelledTab) Icons.Outlined.EventBusy else Icons.Outlined.ConfirmationNumber,
-                                        title = if (cancelledTab) "Tidak ada pendaftaran dibatalkan" else "Belum ada pendaftaran",
-                                        subtitle = if (cancelledTab) "Semua pendaftaranmu masih aktif."
-                                        else "Daftar ke event favoritmu dan pantau statusnya di sini.",
-                                        actionText = if (cancelledTab) null else "Daftar Event",
-                                        onAction = onAddRegistrationClick,
-                                    )
-                                }
-                            }
-                        } else {
+            when {
+                state.isLoading -> LoadingState()
+                state.errorMessage != null && state.registrations.isEmpty() -> ErrorState(state.errorMessage, onRetry)
+                else -> PullToRefreshBox(
+                    isRefreshing = state.isRefreshing,
+                    onRefresh = onRefresh,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    if (state.filtered.isEmpty()) {
+                        MessageState(
+                            icon = Icons.Outlined.AssignmentTurnedIn,
+                            title = if (state.selectedTab == RegistrationTab.UPCOMING) "Belum ada event mendatang"
+                            else "Belum ada riwayat pendaftaran",
+                            subtitle = if (state.selectedTab == RegistrationTab.UPCOMING) "Daftar event baru untuk mengisinya."
+                            else "Pendaftaran yang sudah selesai atau dibatalkan akan muncul di sini.",
+                            actionText = if (state.selectedTab == RegistrationTab.UPCOMING) "Daftar Event" else null,
+                            onAction = if (state.selectedTab == RegistrationTab.UPCOMING) onAddRegistrationClick else null
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 24.dp),
+                        ) {
                             items(state.filtered, key = { it.id }) { registration ->
-                                val event = registration.event
-                                if (event != null) {
-                                    EventCard(
-                                        event = event,
-                                        onClick = { onRegistrationClick(registration.id) },
-                                        modifier = Modifier.animateItem(),
-                                        footer = {
-                                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                                StatusBadge(registration.status)
-                                                if (registration.isActive && event.isPast) {
-                                                    InfoBadge("Selesai", background = SegmentTrack, contentColor = TextSecondary)
-                                                }
-                                            }
-                                        }
-                                    )
-                                }
+                                RegistrationCard(
+                                    registration = registration,
+                                    onClick = { onRegistrationClick(registration.id) },
+                                    modifier = Modifier
+                                        .animateItem()
+                                        .padding(vertical = 6.dp)
+                                )
                             }
                         }
                     }
@@ -199,7 +151,7 @@ fun RegistrationListContent(
 private fun RegistrationListContentPreview() {
     TugasAkhirPAMTheme {
         RegistrationListContent(
-            state = RegistrationListUiState(isLoading = false, registrations = SampleData.registrations),
+            state = RegistrationListUiState(isLoading = false, registrations = listOf(SampleData.registration)),
             onTabSelect = {},
             onRegistrationClick = {},
             onAddRegistrationClick = {},

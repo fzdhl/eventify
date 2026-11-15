@@ -1,9 +1,10 @@
 package com.example.tugasakhirpam.ui.registration
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,17 +14,16 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Badge
-import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -57,26 +57,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tugasakhirpam.model.Event
 import com.example.tugasakhirpam.model.SampleData
 import com.example.tugasakhirpam.ui.components.CategoryLabel
 import com.example.tugasakhirpam.ui.components.EventImage
 import com.example.tugasakhirpam.ui.components.FormTextField
-import com.example.tugasakhirpam.ui.components.InfoBadge
 import com.example.tugasakhirpam.ui.components.LoadingState
+import com.example.tugasakhirpam.ui.components.PickerField
 import com.example.tugasakhirpam.ui.components.PrimaryButton
 import com.example.tugasakhirpam.ui.components.ScreenTopBar
 import com.example.tugasakhirpam.ui.theme.AppBackground
 import com.example.tugasakhirpam.ui.theme.BorderSoft
 import com.example.tugasakhirpam.ui.theme.BrandBlue
 import com.example.tugasakhirpam.ui.theme.BrandBlueSoft
-import com.example.tugasakhirpam.ui.theme.BrandBlueSoftBorder
-import com.example.tugasakhirpam.ui.theme.DangerText
-import com.example.tugasakhirpam.ui.theme.SegmentTrack
 import com.example.tugasakhirpam.ui.theme.SurfaceWhite
-import com.example.tugasakhirpam.ui.theme.TextMuted
 import com.example.tugasakhirpam.ui.theme.TextPrimary
 import com.example.tugasakhirpam.ui.theme.TextSecondary
 import com.example.tugasakhirpam.ui.theme.TugasAkhirPAMTheme
@@ -85,21 +79,23 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun RegistrationFormScreen(
-    eventId: Long?,
-    registrationId: Long?,
+    state: RegistrationFormUiState,
     onBack: () -> Unit,
+    onEventSelected: (EventOption) -> Unit,
+    onFullNameChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit,
+    onPhoneChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+    onErrorDismissed: () -> Unit,
     onSaved: (String) -> Unit,
-    viewModel: RegistrationFormViewModel = viewModel(),
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    var showEventPicker by rememberSaveable { mutableStateOf(false) }
+    var showEventSheet by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) { viewModel.init(eventId, registrationId) }
     LaunchedEffect(state.errorMessage) {
         state.errorMessage?.let {
             snackbarHostState.showSnackbar(it)
-            viewModel.errorShown()
+            onErrorDismissed()
         }
     }
     LaunchedEffect(state.successMessage) {
@@ -110,22 +106,22 @@ fun RegistrationFormScreen(
         state = state,
         snackbarHostState = snackbarHostState,
         onBack = onBack,
-        onEventCardClick = { showEventPicker = true },
-        onFullNameChange = viewModel::onFullNameChange,
-        onEmailChange = viewModel::onEmailChange,
-        onPhoneChange = viewModel::onPhoneChange,
-        onSubmit = viewModel::submit,
+        onEventClick = { showEventSheet = true },
+        onFullNameChange = onFullNameChange,
+        onEmailChange = onEmailChange,
+        onPhoneChange = onPhoneChange,
+        onSubmit = onSubmit,
     )
 
-    if (showEventPicker) {
+    if (showEventSheet) {
         EventPickerSheet(
             options = state.options,
-            selectedId = state.selectedEvent?.id,
+            selected = state.selectedEvent,
             onSelect = {
-                viewModel.onEventSelected(it)
-                showEventPicker = false
+                onEventSelected(it)
+                showEventSheet = false
             },
-            onDismiss = { showEventPicker = false }
+            onDismiss = { showEventSheet = false }
         )
     }
 }
@@ -134,7 +130,7 @@ fun RegistrationFormScreen(
 fun RegistrationFormContent(
     state: RegistrationFormUiState,
     onBack: () -> Unit,
-    onEventCardClick: () -> Unit,
+    onEventClick: () -> Unit,
     onFullNameChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
     onPhoneChange: (String) -> Unit,
@@ -160,29 +156,34 @@ fun RegistrationFormContent(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
         ) {
-            ScreenTopBar(if (state.isEditMode) "Edit Registration" else "Event Registration", onBack)
+            ScreenTopBar(if (state.isEditMode) "Edit Pendaftaran" else "Event Registration", onBack)
             Spacer(Modifier.height(8.dp))
 
-            EventSummaryCard(
-                event = state.selectedEvent,
-                selectable = !state.isEditMode,
-                isError = state.eventError != null,
-                onClick = {
-                    focusManager.clearFocus()
-                    onEventCardClick()
-                }
-            )
-            state.eventError?.let {
-                Text(it, color = DangerText, fontSize = 11.sp, modifier = Modifier.padding(start = 4.dp, top = 6.dp))
+            val selectedEvent = state.selectedEvent
+            if (state.isEditMode && selectedEvent != null) {
+                EventSummaryCard(selectedEvent)
+            } else {
+                PickerField(
+                    label = "Pilih event",
+                    value = selectedEvent?.title.orEmpty(),
+                    placeholder = "Tekan untuk memilih event",
+                    leadingIcon = Icons.Outlined.Event,
+                    trailingIcon = Icons.Outlined.ChevronRight,
+                    onClick = {
+                        focusManager.clearFocus()
+                        onEventClick()
+                    },
+                    error = state.eventError,
+                )
             }
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(16.dp))
 
             FormTextField(
                 label = "Nama lengkap",
                 value = state.fullName,
                 onValueChange = onFullNameChange,
+                placeholder = "Nama lengkap sesuai KTM",
                 leadingIcon = Icons.Outlined.Person,
-                placeholder = "Masukkan nama lengkap",
                 error = state.fullNameError,
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Words,
@@ -190,36 +191,35 @@ fun RegistrationFormContent(
                 )
             )
             FormTextField(
-                label = "NIM",
+                label = "NIM (Terkunci dari akun)",
                 value = state.nim,
                 onValueChange = {},
-                enabled = false,
-                leadingIcon = Icons.Outlined.Badge,
                 placeholder = "NIM",
-                helperText = "NIM diambil dari akunmu dan tidak bisa diubah",
+                leadingIcon = Icons.Outlined.Badge,
+                helperText = "NIM diambil otomatis dari akun loginmu."
             )
             FormTextField(
                 label = "Email",
                 value = state.email,
                 onValueChange = onEmailChange,
-                leadingIcon = Icons.Outlined.Email,
                 placeholder = "nama@univ.ac.id",
+                leadingIcon = Icons.Outlined.Email,
                 error = state.emailError,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next)
             )
             FormTextField(
-                label = "Nomor HP",
+                label = "Nomor WhatsApp",
                 value = state.phone,
                 onValueChange = onPhoneChange,
+                placeholder = "081234567890",
                 leadingIcon = Icons.Outlined.Phone,
-                placeholder = "+62 8xx xxxx xxxx",
                 error = state.phoneError,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Done)
             )
 
             Spacer(Modifier.height(4.dp))
             PrimaryButton(
-                text = if (state.isEditMode) "Simpan Perubahan" else "Submit Registration",
+                text = if (state.isEditMode) "Simpan Perubahan" else "Register Now",
                 onClick = {
                     focusManager.clearFocus()
                     onSubmit()
@@ -237,50 +237,41 @@ fun RegistrationFormContent(
 }
 
 @Composable
-private fun EventSummaryCard(
-    event: Event?,
-    selectable: Boolean,
-    isError: Boolean,
-    onClick: () -> Unit,
-) {
+private fun EventSummaryCard(event: Event) {
     Surface(
-        onClick = onClick,
-        enabled = selectable,
         shape = RoundedCornerShape(14.dp),
         color = SurfaceWhite,
-        border = BorderStroke(1.dp, if (isError) DangerText else BorderSoft),
+        border = BorderStroke(1.dp, BorderSoft),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
             EventImage(
-                url = event?.imageUrl,
+                url = event.imageUrl,
                 modifier = Modifier
                     .size(width = 64.dp, height = 56.dp)
                     .clip(RoundedCornerShape(10.dp))
             )
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                CategoryLabel(if (event != null) "Mendaftar untuk" else "Pilih event")
+                CategoryLabel("Mendaftar untuk")
                 Spacer(Modifier.height(3.dp))
                 Text(
-                    text = event?.title ?: "Belum ada event dipilih",
+                    event.title,
                     style = MaterialTheme.typography.bodyMedium,
                     fontSize = 13.sp,
-                    color = if (event != null) TextPrimary else TextMuted,
+                    color = TextPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text = event?.let { "${DateFormatter.dayMonth(it.eventDate)} · ${it.location}" }
-                        ?: "Ketuk untuk memilih event",
+                    "${DateFormatter.short(event.eventDate)} · ${event.location}",
                     fontSize = 10.sp,
                     color = TextSecondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            if (selectable) Icon(Icons.Outlined.KeyboardArrowDown, "Pilih event", tint = TextMuted)
         }
     }
 }
@@ -289,7 +280,7 @@ private fun EventSummaryCard(
 @Composable
 private fun EventPickerSheet(
     options: List<EventOption>,
-    selectedId: Long?,
+    selected: Event?,
     onSelect: (EventOption) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -297,75 +288,56 @@ private fun EventPickerSheet(
     val scope = rememberCoroutineScope()
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = SurfaceWhite) {
-        Text(
-            "Pilih Event",
-            style = MaterialTheme.typography.titleMedium,
-            color = TextPrimary,
-            modifier = Modifier.padding(horizontal = 20.dp)
-        )
-        Text(
-            "Event yang sudah kamu ikuti, milikmu, atau penuh tidak dapat dipilih.",
-            style = MaterialTheme.typography.bodySmall,
-            color = TextSecondary,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
-        )
-        if (options.isEmpty()) {
-            Text(
-                "Belum ada event mendatang.",
-                style = MaterialTheme.typography.bodySmall,
-                color = TextMuted,
-                modifier = Modifier.padding(20.dp)
-            )
-        }
-        LazyColumn(
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+        Column(
+            Modifier
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 28.dp)
         ) {
-            items(options, key = { it.event.id }) { option ->
-                val event = option.event
-                val selected = event.id == selectedId
-                val enabled = option.disabledReason == null
-                Surface(
-                    onClick = { scope.launch { sheetState.hide() }.invokeOnCompletion { onSelect(option) } },
-                    enabled = enabled,
-                    shape = RoundedCornerShape(12.dp),
-                    color = when {
-                        selected -> BrandBlueSoft
-                        enabled -> SurfaceWhite
-                        else -> SegmentTrack
-                    },
-                    border = BorderStroke(1.dp, if (selected) BrandBlueSoftBorder else BorderSoft),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("Pilih event yang ingin diikuti", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+            Spacer(Modifier.height(12.dp))
+            if (options.isEmpty()) {
+                Text("Semua event terbuka sudah kamu ikuti.", fontSize = 12.sp, color = TextSecondary)
+            } else {
+                options.forEach { option ->
+                    val event = option.event
+                    val isSelected = event.id == selected?.id
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (isSelected) BrandBlueSoft else SurfaceWhite)
+                            .clickable {
+                                scope.launch { sheetState.hide() }.invokeOnCompletion { onSelect(option) }
+                            }
+                            .padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         EventImage(
                             url = event.imageUrl,
                             modifier = Modifier
-                                .size(48.dp)
-                                .clip(RoundedCornerShape(10.dp))
+                                .size(width = 54.dp, height = 46.dp)
+                                .clip(RoundedCornerShape(8.dp))
                         )
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
-                            CategoryLabel(event.category.label)
                             Text(
                                 event.title,
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontSize = 13.sp,
-                                color = if (enabled) TextPrimary else TextMuted,
+                                color = TextPrimary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
+                            Spacer(Modifier.height(2.dp))
                             Text(
-                                "${DateFormatter.short(event.eventDate)} · ${event.remainingQuota} kursi tersisa",
-                                fontSize = 10.sp,
-                                color = TextSecondary,
-                                fontWeight = FontWeight.Normal
+                                if (option.disabledReason != null) "${DateFormatter.short(event.eventDate)} · ${option.disabledReason}"
+                                else "${DateFormatter.short(event.eventDate)} · Sisa kuota ${event.remainingQuota}",
+                                fontSize = 11.sp,
+                                color = TextSecondary
                             )
                         }
-                        when {
-                            option.disabledReason != null -> InfoBadge(option.disabledReason)
-                            selected -> Icon(Icons.Outlined.CheckCircle, null, tint = BrandBlue, modifier = Modifier.size(20.dp))
-                        }
+                        if (isSelected) Icon(Icons.Outlined.Check, null, tint = BrandBlue, modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -380,13 +352,14 @@ private fun RegistrationFormContentPreview() {
         RegistrationFormContent(
             state = RegistrationFormUiState(
                 isLoadingInitial = false,
-                selectedEvent = SampleData.event,
                 fullName = SampleData.user.name,
                 nim = SampleData.user.nim,
                 email = SampleData.user.email,
+                phone = SampleData.user.phone,
+                selectedEvent = SampleData.event
             ),
             onBack = {},
-            onEventCardClick = {},
+            onEventClick = {},
             onFullNameChange = {},
             onEmailChange = {},
             onPhoneChange = {},

@@ -24,7 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,8 +36,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tugasakhirpam.model.Event
 import com.example.tugasakhirpam.model.SampleData
 import com.example.tugasakhirpam.ui.components.CategoryLabel
@@ -61,20 +58,20 @@ import com.example.tugasakhirpam.util.DateFormatter
 
 @Composable
 fun ReviewFormScreen(
-    eventId: Long,
-    reviewId: Long?,
+    state: ReviewFormUiState,
     onBack: () -> Unit,
+    onRatingChange: (Int) -> Unit,
+    onCommentChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+    onErrorDismissed: () -> Unit,
     onSaved: (String) -> Unit,
-    viewModel: ReviewFormViewModel = viewModel(),
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) { viewModel.init(eventId, reviewId) }
     LaunchedEffect(state.errorMessage) {
         state.errorMessage?.let {
             snackbarHostState.showSnackbar(it)
-            viewModel.errorShown()
+            onErrorDismissed()
         }
     }
     LaunchedEffect(state.successMessage) {
@@ -85,9 +82,9 @@ fun ReviewFormScreen(
         state = state,
         snackbarHostState = snackbarHostState,
         onBack = onBack,
-        onRatingChange = viewModel::onRatingChange,
-        onCommentChange = viewModel::onCommentChange,
-        onSubmit = viewModel::submit,
+        onRatingChange = onRatingChange,
+        onCommentChange = onCommentChange,
+        onSubmit = onSubmit,
     )
 }
 

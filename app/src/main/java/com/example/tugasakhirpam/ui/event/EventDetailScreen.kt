@@ -64,10 +64,9 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tugasakhirpam.model.Event
 import com.example.tugasakhirpam.model.Registration
+import com.example.tugasakhirpam.model.RegistrationStatus
 import com.example.tugasakhirpam.model.SampleData
 import com.example.tugasakhirpam.ui.components.CategoryLabel
 import com.example.tugasakhirpam.ui.components.CircleIconButton
@@ -100,26 +99,27 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun EventDetailScreen(
-    eventId: Long,
+    state: EventDetailUiState,
     resultMessage: String?,
     onResultConsumed: () -> Unit,
     onBack: () -> Unit,
+    onToggleFavorite: () -> Unit,
     onRegisterClick: (Long) -> Unit,
     onViewRegistration: (Long) -> Unit,
     onEditEvent: (Long) -> Unit,
     onViewReviews: (Long) -> Unit,
+    onDeleteEvent: () -> Unit,
+    onUpdateParticipantStatus: (Long, RegistrationStatus) -> Unit,
+    onSnackbarDismissed: () -> Unit,
     onDeleted: (String) -> Unit,
-    viewModel: EventDetailViewModel = viewModel(),
+    onRetry: () -> Unit,
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
     var participantToEdit by remember { mutableStateOf<Registration?>(null) }
-
-    LaunchedEffect(eventId) { viewModel.load(eventId) }
 
     LaunchedEffect(resultMessage) {
         resultMessage?.let {
@@ -130,7 +130,7 @@ fun EventDetailScreen(
     LaunchedEffect(state.snackbarMessage) {
         state.snackbarMessage?.let {
             snackbarHostState.showSnackbar(it)
-            viewModel.snackbarShown()
+            onSnackbarDismissed()
         }
     }
     LaunchedEffect(state.deletedMessage) {
@@ -145,15 +145,15 @@ fun EventDetailScreen(
         state = state,
         snackbarHostState = snackbarHostState,
         onBack = onBack,
-        onRetry = { viewModel.load(eventId) },
-        onToggleFavorite = viewModel::toggleFavorite,
+        onRetry = onRetry,
+        onToggleFavorite = onToggleFavorite,
         onShare = { event -> launchIntent(IntentHelper.shareEvent(context, event)) },
         onOpenMaps = { event -> launchIntent(IntentHelper.openMaps(context, event.location)) },
         onAddToCalendar = { event -> launchIntent(IntentHelper.addToCalendar(context, event)) },
-        onRegisterClick = { onRegisterClick(eventId) },
+        onRegisterClick = { state.event?.id?.let(onRegisterClick) },
         onViewRegistration = onViewRegistration,
-        onEditEvent = { onEditEvent(eventId) },
-        onViewReviews = { onViewReviews(eventId) },
+        onEditEvent = { state.event?.id?.let(onEditEvent) },
+        onViewReviews = { state.event?.id?.let(onViewReviews) },
         onDeleteClick = { showDeleteDialog = true },
         onParticipantClick = { participantToEdit = it },
     )
@@ -170,7 +170,7 @@ fun EventDetailScreen(
             confirmText = "Hapus",
             onConfirm = {
                 showDeleteDialog = false
-                viewModel.deleteEvent()
+                onDeleteEvent()
             },
             onDismiss = { showDeleteDialog = false }
         )
@@ -182,7 +182,7 @@ fun EventDetailScreen(
             current = participant.status,
             onSelect = { status ->
                 participantToEdit = null
-                if (status != participant.status) viewModel.updateParticipantStatus(participant.id, status)
+                if (status != participant.status) onUpdateParticipantStatus(participant.id, status)
             },
             onDismiss = { participantToEdit = null },
             onCall = { launchIntent(IntentHelper.dialPhone(context, participant.phone)) },

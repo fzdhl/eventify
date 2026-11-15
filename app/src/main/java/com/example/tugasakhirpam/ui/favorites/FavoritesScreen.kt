@@ -10,12 +10,9 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tugasakhirpam.model.SampleData
 import com.example.tugasakhirpam.ui.components.AppBottomBar
 import com.example.tugasakhirpam.ui.components.BottomNavItem
@@ -33,19 +30,21 @@ import com.example.tugasakhirpam.ui.theme.TugasAkhirPAMTheme
 
 @Composable
 fun FavoritesScreen(
+    state: FavoritesUiState,
     onEventClick: (Long) -> Unit,
     onExploreClick: () -> Unit,
     onBottomNavClick: (BottomNavItem) -> Unit,
-    viewModel: FavoritesViewModel = viewModel(),
+    onToggleFavorite: (Long) -> Unit,
+    onRefresh: () -> Unit,
+    onRetry: () -> Unit,
+    onSnackbarDismissed: () -> Unit,
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) { viewModel.loadFavorites() }
     LaunchedEffect(state.snackbarMessage) {
         state.snackbarMessage?.let {
             snackbarHostState.showSnackbar(it)
-            viewModel.snackbarShown()
+            onSnackbarDismissed()
         }
     }
 
@@ -55,9 +54,9 @@ fun FavoritesScreen(
         onEventClick = onEventClick,
         onExploreClick = onExploreClick,
         onBottomNavClick = onBottomNavClick,
-        onToggleFavorite = viewModel::toggleFavorite,
-        onRefresh = viewModel::refresh,
-        onRetry = viewModel::loadFavorites,
+        onToggleFavorite = onToggleFavorite,
+        onRefresh = onRefresh,
+        onRetry = onRetry,
     )
 }
 

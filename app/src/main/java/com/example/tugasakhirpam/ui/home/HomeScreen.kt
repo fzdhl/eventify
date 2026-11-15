@@ -53,8 +53,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tugasakhirpam.model.Event
 import com.example.tugasakhirpam.model.EventCategory
 import com.example.tugasakhirpam.model.SampleData
@@ -81,20 +79,17 @@ import com.example.tugasakhirpam.util.DateFormatter
 
 @Composable
 fun HomeScreen(
+    state: HomeUiState,
     resultMessage: String?,
     onResultConsumed: () -> Unit,
     onEventClick: (Long) -> Unit,
     onSeeAllEvents: () -> Unit,
     onCategoryClick: (EventCategory) -> Unit,
     onBottomNavClick: (BottomNavItem) -> Unit,
-    viewModel: HomeViewModel = viewModel(),
+    onRetry: () -> Unit,
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-
     var query by rememberSaveable { mutableStateOf("") }
-
-    LaunchedEffect(Unit) { viewModel.loadEvents() }
 
     LaunchedEffect(resultMessage) {
         resultMessage?.let {
@@ -112,7 +107,7 @@ fun HomeScreen(
         onSeeAllEvents = onSeeAllEvents,
         onCategoryClick = onCategoryClick,
         onBottomNavClick = onBottomNavClick,
-        onRetry = viewModel::loadEvents,
+        onRetry = onRetry,
     )
 }
 

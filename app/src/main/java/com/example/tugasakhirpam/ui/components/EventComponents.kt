@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tugasakhirpam.model.Event
 import com.example.tugasakhirpam.model.EventCategory
+import com.example.tugasakhirpam.model.Registration
 import com.example.tugasakhirpam.ui.theme.BorderSoft
 import com.example.tugasakhirpam.ui.theme.BrandBlue
 import com.example.tugasakhirpam.ui.theme.BrandBlueSoft
@@ -121,6 +122,65 @@ fun EventCard(
                     Spacer(Modifier.height(10.dp))
                     footer()
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun RegistrationCard(
+    registration: Registration,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val event = registration.event
+    val imageWidth = 96.dp
+
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = SurfaceWhite,
+        border = BorderStroke(1.dp, BorderSoft),
+        shadowElevation = 1.dp,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Box(Modifier.fillMaxWidth()) {
+            Box(Modifier.matchParentSize()) {
+                EventImage(
+                    url = event?.imageUrl,
+                    contentDescription = event?.title,
+                    modifier = Modifier
+                        .width(imageWidth)
+                        .fillMaxHeight()
+                )
+            }
+            Column(
+                Modifier
+                    .padding(start = imageWidth)
+                    .padding(start = 14.dp, end = 12.dp, top = 14.dp, bottom = 14.dp)
+                    .heightIn(min = 92.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CategoryLabel(
+                        event?.category?.label ?: "Event",
+                        Modifier
+                            .weight(1f)
+                            .padding(top = 2.dp)
+                    )
+                    StatusBadge(registration.status)
+                }
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    event?.title ?: "Event",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = TextPrimary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(8.dp))
+                IconText(Icons.Outlined.CalendarToday, DateFormatter.short(event?.eventDate))
+                Spacer(Modifier.height(4.dp))
+                IconText(Icons.Outlined.LocationOn, event?.location ?: "-")
             }
         }
     }

@@ -60,8 +60,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tugasakhirpam.model.Registration
 import com.example.tugasakhirpam.model.RegistrationStatus
 import com.example.tugasakhirpam.model.SampleData
@@ -89,23 +87,24 @@ import com.example.tugasakhirpam.util.DateFormatter
 
 @Composable
 fun RegistrationDetailScreen(
-    registrationId: Long,
+    state: RegistrationDetailUiState,
     resultMessage: String?,
     onResultConsumed: () -> Unit,
     onBack: () -> Unit,
     onEdit: (Long) -> Unit,
     onViewEvent: (Long) -> Unit,
     onViewReviews: (Long) -> Unit,
+    onCancel: () -> Unit,
+    onReRegister: () -> Unit,
+    onDelete: () -> Unit,
+    onSnackbarDismissed: () -> Unit,
     onDeleted: (String) -> Unit,
-    viewModel: RegistrationDetailViewModel = viewModel(),
+    onRetry: () -> Unit,
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var showCancelDialog by rememberSaveable { mutableStateOf(false) }
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
-
-    LaunchedEffect(registrationId) { viewModel.load(registrationId) }
 
     LaunchedEffect(resultMessage) {
         resultMessage?.let {
@@ -116,7 +115,7 @@ fun RegistrationDetailScreen(
     LaunchedEffect(state.snackbarMessage) {
         state.snackbarMessage?.let {
             snackbarHostState.showSnackbar(it)
-            viewModel.snackbarShown()
+            onSnackbarDismissed()
         }
     }
     LaunchedEffect(state.deletedMessage) {
@@ -127,12 +126,12 @@ fun RegistrationDetailScreen(
         state = state,
         snackbarHostState = snackbarHostState,
         onBack = onBack,
-        onRetry = { viewModel.load(registrationId) },
-        onEdit = { onEdit(registrationId) },
+        onRetry = onRetry,
+        onEdit = { state.registration?.id?.let(onEdit) },
         onViewEvent = onViewEvent,
         onViewReviews = onViewReviews,
         onCancel = { showCancelDialog = true },
-        onReRegister = viewModel::reRegister,
+        onReRegister = onReRegister,
         onDelete = { showDeleteDialog = true },
     )
 
@@ -143,7 +142,7 @@ fun RegistrationDetailScreen(
             confirmText = "Ya, batalkan",
             onConfirm = {
                 showCancelDialog = false
-                viewModel.cancel()
+                onCancel()
             },
             onDismiss = { showCancelDialog = false }
         )
@@ -155,7 +154,7 @@ fun RegistrationDetailScreen(
             confirmText = "Hapus",
             onConfirm = {
                 showDeleteDialog = false
-                viewModel.delete()
+                onDelete()
             },
             onDismiss = { showDeleteDialog = false }
         )

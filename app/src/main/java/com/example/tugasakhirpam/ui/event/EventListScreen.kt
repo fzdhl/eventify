@@ -1,7 +1,5 @@
 package com.example.tugasakhirpam.ui.event
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -19,15 +17,10 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tugasakhirpam.model.Event
 import com.example.tugasakhirpam.model.EventCategory
 import com.example.tugasakhirpam.model.SampleData
@@ -45,44 +38,12 @@ import com.example.tugasakhirpam.ui.components.ScreenTopBar
 import com.example.tugasakhirpam.ui.theme.AppBackground
 import com.example.tugasakhirpam.ui.theme.DangerBg
 import com.example.tugasakhirpam.ui.theme.DangerText
+import com.example.tugasakhirpam.ui.theme.SegmentTrack
+import com.example.tugasakhirpam.ui.theme.TextSecondary
 import com.example.tugasakhirpam.ui.theme.TugasAkhirPAMTheme
 
 @Composable
 fun EventListScreen(
-    initialCategory: EventCategory?,
-    showAsTab: Boolean,
-    onBack: () -> Unit,
-    onEventClick: (Long) -> Unit,
-    onBottomNavClick: (BottomNavItem) -> Unit,
-    viewModel: EventListViewModel = viewModel(),
-) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    LaunchedEffect(Unit) { viewModel.start(EventListSource.ALL, initialCategory) }
-    LaunchedEffect(state.snackbarMessage) {
-        state.snackbarMessage?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.snackbarShown()
-        }
-    }
-
-    EventListContent(
-        state = state,
-        showAsTab = showAsTab,
-        snackbarHostState = snackbarHostState,
-        onBack = onBack,
-        onEventClick = onEventClick,
-        onBottomNavClick = onBottomNavClick,
-        onCategorySelect = viewModel::selectCategory,
-        onToggleFavorite = viewModel::toggleFavorite,
-        onRefresh = viewModel::refresh,
-        onRetry = { viewModel.start(EventListSource.ALL) },
-    )
-}
-
-@Composable
-fun EventListContent(
     state: EventListUiState,
     showAsTab: Boolean,
     onBack: () -> Unit,
@@ -92,12 +53,23 @@ fun EventListContent(
     onToggleFavorite: (Long) -> Unit,
     onRefresh: () -> Unit,
     onRetry: () -> Unit,
-    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    onSnackbarDismissed: () -> Unit,
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(state.snackbarMessage) {
+        state.snackbarMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            onSnackbarDismissed()
+        }
+    }
+
     Scaffold(
         containerColor = AppBackground,
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        bottomBar = { if (showAsTab) AppBottomBar(BottomNavItem.CATEGORIES, onBottomNavClick) },
+        bottomBar = {
+            if (showAsTab) AppBottomBar(BottomNavItem.CATEGORIES, onBottomNavClick)
+        },
     ) { innerPadding ->
         Column(
             Modifier
@@ -105,20 +77,24 @@ fun EventListContent(
                 .padding(innerPadding)
         ) {
             if (showAsTab) {
-                PageHeader("Jelajahi", "Categories", "Temukan event sesuai minatmu")
+                PageHeader("Kategori", "Semua Event", "Temukan event sesuai minatmu")
             } else {
-                ScreenTopBar("Semua Event", onBack, Modifier.padding(horizontal = 20.dp))
-                Spacer(Modifier.height(8.dp))
+                ScreenTopBar(
+                    state.selectedCategory?.label ?: "Semua Event",
+                    onBack,
+                    Modifier.padding(horizontal = 20.dp)
+                )
             }
-
-            CategoryFilterRow(selected = state.selectedCategory, onSelect = onCategorySelect)
-            Spacer(Modifier.height(8.dp))
-
+            CategoryFilterRow(
+                selected = state.selectedCategory,
+                onSelect = onCategorySelect,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
             EventListBody(
                 isLoading = state.isLoading,
                 isRefreshing = state.isRefreshing,
                 errorMessage = state.errorMessage,
-                events = state.filtered,
+                events = state.events,
                 onRefresh = onRefresh,
                 onRetry = onRetry,
                 onEventClick = onEventClick,
@@ -126,15 +102,15 @@ fun EventListContent(
                     MessageState(
                         icon = Icons.Outlined.EventBusy,
                         title = "Belum ada event",
-                        subtitle = "Belum ada event mendatang di kategori ini."
+                        subtitle = "Coba pilih kategori lain atau tarik ke bawah untuk memuat ulang."
                     )
                 },
                 cardTrailing = { event -> FavoriteToggle(event.isFavorite, { onToggleFavorite(event.id) }) },
                 cardFooter = { event ->
-                    if (event.isFull) {
-                        InfoBadge("Kuota penuh", background = DangerBg, contentColor = DangerText)
-                    } else {
-                        InfoBadge("${event.remainingQuota} kursi tersisa")
+                    when {
+                        event.isPast -> InfoBadge("Selesai", background = SegmentTrack, contentColor = TextSecondary)
+                        event.isFull -> InfoBadge("Kuota penuh", background = DangerBg, contentColor = DangerText)
+                        else -> InfoBadge("${event.remainingQuota} kursi tersisa")
                     }
                 },
             )
@@ -144,7 +120,7 @@ fun EventListContent(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun EventListBody(
+fun EventListBody(
     isLoading: Boolean,
     isRefreshing: Boolean,
     errorMessage: String?,
@@ -153,43 +129,33 @@ internal fun EventListBody(
     onRetry: () -> Unit,
     onEventClick: (Long) -> Unit,
     emptyContent: @Composable () -> Unit,
-    cardTrailing: (@Composable (Event) -> Unit)? = null,
-    cardFooter: (@Composable (Event) -> Unit)? = null,
-    bottomPadding: Dp = 24.dp,
+    cardTrailing: @Composable (Event) -> Unit = {},
+    cardFooter: @Composable (Event) -> Unit = {},
 ) {
-    PullToRefreshBox(
-        isRefreshing = isRefreshing,
-        onRefresh = onRefresh,
-        modifier = Modifier.fillMaxSize()
-    ) {
-        when {
-            isLoading -> LoadingState()
-
-            errorMessage != null && events.isEmpty() -> ErrorState(errorMessage, onRetry)
-
-            else -> LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = bottomPadding),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                if (events.isEmpty()) {
-                    item(key = "empty") {
-                        Box(Modifier.fillParentMaxHeight(0.75f), contentAlignment = Alignment.Center) {
-                            emptyContent()
-                        }
-                    }
-                } else {
+    when {
+        isLoading -> LoadingState()
+        errorMessage != null && events.isEmpty() -> ErrorState(errorMessage, onRetry)
+        else -> PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            if (events.isEmpty()) {
+                emptyContent()
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 24.dp),
+                ) {
                     items(events, key = { it.id }) { event ->
                         EventCard(
                             event = event,
                             onClick = { onEventClick(event.id) },
-                            modifier = Modifier.animateItem(),
-                            trailing = if (cardTrailing != null) {
-                                { cardTrailing(event) }
-                            } else null,
-                            footer = if (cardFooter != null) {
-                                { cardFooter(event) }
-                            } else null,
+                            trailing = { cardTrailing(event) },
+                            footer = { cardFooter(event) },
+                            modifier = Modifier
+                                .animateItem()
+                                .padding(vertical = 6.dp)
                         )
                     }
                 }
@@ -200,9 +166,9 @@ internal fun EventListBody(
 
 @Preview(showBackground = true, heightDp = 800)
 @Composable
-private fun EventListContentPreview() {
+private fun EventListScreenPreview() {
     TugasAkhirPAMTheme {
-        EventListContent(
+        EventListScreen(
             state = EventListUiState(isLoading = false, events = SampleData.events),
             showAsTab = true,
             onBack = {},
@@ -212,6 +178,7 @@ private fun EventListContentPreview() {
             onToggleFavorite = {},
             onRefresh = {},
             onRetry = {},
+            onSnackbarDismissed = {},
         )
     }
 }
