@@ -15,17 +15,27 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+
 enum class RegistrationTab(val label: String) {
     ALL("All"),
     UPCOMING("Upcoming"),
+    PAST("Past Events"),
     CANCELLED("Cancelled"),
 }
 
-private fun List<Registration>.filterBy(tab: RegistrationTab): List<Registration> = when (tab) {
+private fun List<Registration>.filterBy(
+    tab: RegistrationTab
+): List<Registration> = when (tab) {
     RegistrationTab.ALL -> this
     RegistrationTab.UPCOMING -> filter { it.isActive && it.event?.isPast == false }
+    RegistrationTab.PAST ->
+        filter {
+            it.event?.isPast == true &&
+                    it.status == RegistrationStatus.CONFIRMED
+        }
     RegistrationTab.CANCELLED -> filter { it.status == RegistrationStatus.CANCELLED }
 }
+
 
 data class RegistrationListUiState(
     val isLoading: Boolean = true,
