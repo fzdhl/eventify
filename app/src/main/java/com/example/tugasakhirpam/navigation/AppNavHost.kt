@@ -34,6 +34,10 @@ import com.example.tugasakhirpam.ui.favorites.FavoritesScreen
 import com.example.tugasakhirpam.ui.favorites.FavoritesViewModel
 import com.example.tugasakhirpam.ui.home.HomeScreen
 import com.example.tugasakhirpam.ui.home.HomeViewModel
+import com.example.tugasakhirpam.ui.profile.EditProfileScreen
+import com.example.tugasakhirpam.ui.profile.EditProfileViewModel
+import com.example.tugasakhirpam.ui.profile.ProfileScreen
+import com.example.tugasakhirpam.ui.profile.ProfileViewModel
 import com.example.tugasakhirpam.ui.registration.RegistrationDetailScreen
 import com.example.tugasakhirpam.ui.registration.RegistrationDetailViewModel
 import com.example.tugasakhirpam.ui.registration.RegistrationFormScreen
@@ -68,6 +72,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 onCategoryClick = { category -> navController.navigate(EventList(category.id)) },
                 onBottomNavClick = navController::navigateToTab,
                 onRetry = viewModel::loadEvents,
+                onProfileClick = { navController.navigate(Profile) },
             )
         }
 
@@ -349,6 +354,42 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 onBack = dropUnlessResumed(block = goBack),
                 onRatingChange = viewModel::onRatingChange,
                 onCommentChange = viewModel::onCommentChange,
+                onSubmit = viewModel::submit,
+                onErrorDismissed = viewModel::errorShown,
+                onSaved = { message -> navController.popWithResult(message) },
+            )
+        }
+
+        // ======================= PROFIL & AKUN =======================
+        composable<Profile> { entry ->
+            val viewModel: ProfileViewModel = viewModel(entry)
+            val state by viewModel.uiState.collectAsStateWithLifecycle()
+            val result by entry.rememberResultMessage()
+
+            ProfileScreen(
+                state = state,
+                resultMessage = result,
+                onResultConsumed = { entry.consumeResultMessage() },
+                onBack = dropUnlessResumed(block = goBack),
+                onEditClick = { navController.navigate(EditProfile) },
+                onLogout = viewModel::logout,
+                onErrorShown = viewModel::errorShown,
+            )
+        }
+
+        composable<EditProfile> { entry ->
+            val viewModel: EditProfileViewModel = viewModel(entry)
+            val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+            EditProfileScreen(
+                state = state,
+                onBack = dropUnlessResumed(block = goBack),
+                onNameChange = viewModel::onNameChange,
+                onNimChange = viewModel::onNimChange,
+                onPhoneChange = viewModel::onPhoneChange,
+                onStudyProgramChange = viewModel::onStudyProgramChange,
+                onAvatarPicked = viewModel::onAvatarPicked,
+                onAvatarReadFailed = viewModel::onAvatarReadFailed,
                 onSubmit = viewModel::submit,
                 onErrorDismissed = viewModel::errorShown,
                 onSaved = { message -> navController.popWithResult(message) },

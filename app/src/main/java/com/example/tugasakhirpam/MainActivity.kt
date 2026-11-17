@@ -7,8 +7,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.navigation.compose.rememberNavController
-import com.example.tugasakhirpam.navigation.AppNavHost
+import com.example.tugasakhirpam.data.AppContainer
+import com.example.tugasakhirpam.navigation.AuthGate
 import com.example.tugasakhirpam.ui.theme.TugasAkhirPAMTheme
 
 class MainActivity : ComponentActivity() {
@@ -16,6 +16,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "onCreate dipanggil")
+        AppContainer.init(applicationContext)
 
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
@@ -24,8 +25,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             TugasAkhirPAMTheme {
-                val navController = rememberNavController()
-                AppNavHost(navController = navController)
+                AuthGate()
             }
         }
     }

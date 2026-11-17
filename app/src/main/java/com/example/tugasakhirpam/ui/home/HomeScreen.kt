@@ -2,6 +2,7 @@ package com.example.tugasakhirpam.ui.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -66,7 +67,7 @@ import com.example.tugasakhirpam.ui.components.EventImage
 import com.example.tugasakhirpam.ui.components.LoadingState
 import com.example.tugasakhirpam.ui.components.MessageState
 import com.example.tugasakhirpam.ui.components.SectionHeader
-import com.example.tugasakhirpam.ui.components.UserAvatar
+import com.example.tugasakhirpam.ui.profile.ProfileAvatar
 import com.example.tugasakhirpam.ui.theme.AppBackground
 import com.example.tugasakhirpam.ui.theme.BorderInput
 import com.example.tugasakhirpam.ui.theme.BrandBlue
@@ -87,6 +88,7 @@ fun HomeScreen(
     onCategoryClick: (Category) -> Unit,
     onBottomNavClick: (BottomNavItem) -> Unit,
     onRetry: () -> Unit,
+    onProfileClick: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     var query by rememberSaveable { mutableStateOf("") }
@@ -108,6 +110,7 @@ fun HomeScreen(
         onCategoryClick = onCategoryClick,
         onBottomNavClick = onBottomNavClick,
         onRetry = onRetry,
+        onProfileClick = onProfileClick,
     )
 }
 
@@ -122,6 +125,7 @@ fun HomeContent(
     onBottomNavClick: (BottomNavItem) -> Unit,
     onRetry: () -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    onProfileClick: () -> Unit = {},
 ) {
     Scaffold(
         containerColor = AppBackground,
@@ -141,7 +145,7 @@ fun HomeContent(
                 contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                item(key = "header") { HomeHeader(state.user) }
+                item(key = "header") { HomeHeader(state.user, onProfileClick) }
                 item(key = "search") { SearchField(query, onQueryChange) }
 
                 if (query.isNotBlank()) {
@@ -203,7 +207,7 @@ fun HomeContent(
 }
 
 @Composable
-private fun HomeHeader(user: User) {
+private fun HomeHeader(user: User, onProfileClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -215,7 +219,13 @@ private fun HomeHeader(user: User) {
             Spacer(Modifier.height(2.dp))
             Text("Hai, ${user.firstName}!", style = MaterialTheme.typography.headlineMedium, color = TextPrimary)
         }
-        UserAvatar(user.initials)
+        ProfileAvatar(
+            user = user,
+            size = 46.dp,
+            modifier = Modifier
+                .clip(CircleShape)
+                .clickable(onClick = onProfileClick)
+        )
     }
 }
 
