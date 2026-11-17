@@ -11,6 +11,7 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.coroutines.cancellation.CancellationException
+import io.github.jan.supabase.exceptions.RestException
 
 object DateFormatter {
     private val locale: Locale = Locale.forLanguageTag("id-ID")
@@ -99,6 +100,28 @@ inline fun <T> runSafely(block: () -> T): Result<T> =
 
 fun Throwable.toUserMessage(): String = when {
     this is IOException -> "Tidak dapat terhubung ke server. Periksa koneksi internetmu."
-    !message.isNullOrBlank() -> message!!
+    this is RestException -> friendlyMessage()
+    !message.isNullOrBlank() -> message!!.take(200)
     else -> "Terjadi kesalahan. Silakan coba lagi."
+}
+
+/**
+ * RestException.message memuat URL dan seluruh header (termasuk token). Jangan pernah ditampilkan.
+ * Yang dipakai hanya field error dan description dari Supabase, lalu diterjemahkan.
+ */
+private fun RestException.friendlyMessage(): String {
+    val detail = description?.takeIf { it.isNotBlank() } ?: error
+    return when {
+        detail.contains("row-level security", ignoreCase = true) ->
+            "Akses ditolak oleh aturan keamanan Supabase (RLS). Pastikan SQL setup sudah dijalankan."
+        detail.contains("bucket not found", ignoreCase = true) ->
+            "Bucket penyimpanan belum dibuat di Supabase. Jalankan SQL setup."
+        detail.contains("mime type", ignoreCase = true) ->
+            "Format file tidak diizinkan. Gunakan foto JPG atau PNG."
+        detail.contains("maximum allowed size", ignoreCase = true) ||
+                detail.contains("too large", ignoreCase = true) ->
+            "Ukuran foto melebihi batas 5 MB."
+        statusCode == 401 -> "Sesi berakhir. Silakan keluar lalu masuk lagi."
+        else -> "Server menolak permintaan (kode $statusCode): ${detail.take(120)}"
+    }
 }

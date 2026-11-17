@@ -17,6 +17,20 @@ object Registrations
 @Serializable
 object MyEvents
 
+// Profil (dibuka dari avatar di Home)
+@Serializable
+object Profile
+
+@Serializable
+object EditProfile
+
+// Graf terpisah untuk user yang belum login (lihat AuthNavHost)
+@Serializable
+object Login
+
+@Serializable
+object Register
+
 @Serializable
 data class CategoryDetail(val categoryId: Long)
 
