@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ChevronLeft
@@ -154,13 +155,44 @@ fun UserAvatar(initials: String, modifier: Modifier = Modifier, size: androidx.c
 }
 
 @Composable
-fun PageHeader(eyebrow: String, title: String, subtitle: String, modifier: Modifier = Modifier) {
-    Column(modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 16.dp)) {
-        CategoryLabel(eyebrow)
-        Spacer(Modifier.height(4.dp))
-        Text(title, style = MaterialTheme.typography.headlineSmall, color = TextPrimary)
-        Spacer(Modifier.height(2.dp))
-        Text(subtitle, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+fun PageHeader(
+    eyebrow: String,
+    title: String,
+    subtitle: String,
+    modifier: Modifier = Modifier,
+    actionText: String? = null,
+    onAction: (() -> Unit)? = null,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            CategoryLabel(eyebrow)
+            Spacer(Modifier.height(4.dp))
+            Text(title, style = MaterialTheme.typography.headlineSmall, color = TextPrimary)
+            Spacer(Modifier.height(2.dp))
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+        }
+        if (actionText != null && onAction != null) {
+            Surface(
+                onClick = onAction,
+                shape = RoundedCornerShape(12.dp),
+                color = BrandBlue,
+                contentColor = Color.White,
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Outlined.Add, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(actionText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
     }
 }
 
