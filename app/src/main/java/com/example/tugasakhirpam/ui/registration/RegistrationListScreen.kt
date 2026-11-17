@@ -117,10 +117,18 @@ fun RegistrationListContent(
                     if (state.filtered.isEmpty()) {
                         MessageState(
                             icon = Icons.Outlined.AssignmentTurnedIn,
-                            title = if (state.selectedTab == RegistrationTab.UPCOMING) "Belum ada event mendatang"
-                            else "Belum ada riwayat pendaftaran",
-                            subtitle = if (state.selectedTab == RegistrationTab.UPCOMING) "Daftar event baru untuk mengisinya."
-                            else "Pendaftaran yang sudah selesai atau dibatalkan akan muncul di sini.",
+                            title = when (state.selectedTab) {
+                                RegistrationTab.UPCOMING -> "Belum ada event mendatang"
+                                RegistrationTab.PAST -> "Belum ada event selesai"
+                                RegistrationTab.CANCELLED -> "Belum ada pendaftaran dibatalkan"
+                                RegistrationTab.ALL -> "Belum ada riwayat pendaftaran"
+                            },
+                            subtitle = when (state.selectedTab) {
+                                RegistrationTab.UPCOMING -> "Daftar event baru untuk mengisinya."
+                                RegistrationTab.PAST -> "Event yang sudah kamu ikuti dan selesai akan muncul di sini."
+                                RegistrationTab.CANCELLED -> "Pendaftaran yang kamu batalkan akan muncul di sini."
+                                RegistrationTab.ALL -> "Pendaftaran event kamu akan muncul di sini."
+                            },
                             actionText = if (state.selectedTab == RegistrationTab.UPCOMING) "Daftar Event" else null,
                             onAction = if (state.selectedTab == RegistrationTab.UPCOMING) onAddRegistrationClick else null
                         )

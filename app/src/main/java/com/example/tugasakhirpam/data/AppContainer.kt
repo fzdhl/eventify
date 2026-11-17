@@ -22,12 +22,6 @@ object AppContainer {
     val authRepository: AuthRepository by lazy { SupabaseAuthRepository(SupabaseProvider.client, appScope) }
     val profileRepository: ProfileRepository by lazy { SupabaseProfileRepository(SupabaseProvider.client, authRepository) }
 
-    /**
-     * JEMBATAN SEMENTARA. Repository event, review, dan registrasi masih memakai FakeDataSource
-     * yang mengenali pemilik data lewat id "u-001". Karena itu id tetap dari data palsu,
-     * sedangkan nama, NIM, email, HP, prodi, dan foto diambil dari akun yang sedang login.
-     * Hapus jembatan ini setelah semua repository pindah ke Supabase dan memakai id auth asli.
-     */
 //    val currentUser: User
 //        get() {
 //            val fake = FakeDataSource.currentUser
@@ -54,7 +48,7 @@ object AppContainer {
                 ?: return fake
 
             return fake.copy(
-                id = real.id, // PENTING: gunakan UUID asli Supabase
+                id = real.id,
                 name = real.name.ifBlank { fake.name },
                 nim = real.nim.ifBlank { fake.nim },
                 email = real.email.ifBlank { fake.email },
@@ -65,10 +59,7 @@ object AppContainer {
             )
         }
 
-
-    // ============== Fitur lain (masih data palsu, milik anggota masing-masing) ==============
     //val eventRepository: EventRepository by lazy { FakeEventRepository() }
-
     val eventRepository: EventRepository by lazy {
         SupabaseEventRepository(
             client = SupabaseProvider.client
@@ -80,7 +71,11 @@ object AppContainer {
             eventRepository = eventRepository
         )
     }
-    val reviewRepository: ReviewRepository by lazy { FakeReviewRepository() }
+    val reviewRepository: ReviewRepository by lazy {
+        SupabaseReviewRepository(
+            client = SupabaseProvider.client
+        )
+    }
     val categoryRepository: CategoryRepository by lazy {
         SupabaseCategoryRepository(
             client = SupabaseProvider.client,
