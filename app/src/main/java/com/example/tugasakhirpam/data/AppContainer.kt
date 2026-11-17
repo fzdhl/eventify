@@ -74,7 +74,12 @@ object AppContainer {
             client = SupabaseProvider.client
         )
     }
-    val registrationRepository: RegistrationRepository by lazy { FakeRegistrationRepository() }
+    val registrationRepository: RegistrationRepository by lazy {
+        SupabaseRegistrationRepository(
+            client = SupabaseProvider.client,
+            eventRepository = eventRepository
+        )
+    }
     val reviewRepository: ReviewRepository by lazy { FakeReviewRepository() }
     val categoryRepository: CategoryRepository by lazy {
         SupabaseCategoryRepository(
