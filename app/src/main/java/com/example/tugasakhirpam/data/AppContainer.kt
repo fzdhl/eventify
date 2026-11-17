@@ -28,12 +28,33 @@ object AppContainer {
      * sedangkan nama, NIM, email, HP, prodi, dan foto diambil dari akun yang sedang login.
      * Hapus jembatan ini setelah semua repository pindah ke Supabase dan memakai id auth asli.
      */
+//    val currentUser: User
+//        get() {
+//            val fake = FakeDataSource.currentUser
+//            if (!SupabaseProvider.isConfigured) return fake
+//            val real = (authRepository.state.value as? AuthState.SignedIn)?.user ?: return fake
+//            return fake.copy(
+//                name = real.name.ifBlank { fake.name },
+//                nim = real.nim.ifBlank { fake.nim },
+//                email = real.email.ifBlank { fake.email },
+//                phone = real.phone,
+//                studyProgram = real.studyProgram,
+//                avatarUrl = real.avatarUrl,
+//                updatedAt = real.updatedAt,
+//            )
+//        }
+
     val currentUser: User
         get() {
             val fake = FakeDataSource.currentUser
+
             if (!SupabaseProvider.isConfigured) return fake
-            val real = (authRepository.state.value as? AuthState.SignedIn)?.user ?: return fake
+
+            val real = (authRepository.state.value as? AuthState.SignedIn)?.user
+                ?: return fake
+
             return fake.copy(
+                id = real.id, // PENTING: gunakan UUID asli Supabase
                 name = real.name.ifBlank { fake.name },
                 nim = real.nim.ifBlank { fake.nim },
                 email = real.email.ifBlank { fake.email },
@@ -44,9 +65,21 @@ object AppContainer {
             )
         }
 
+
     // ============== Fitur lain (masih data palsu, milik anggota masing-masing) ==============
-    val eventRepository: EventRepository by lazy { FakeEventRepository() }
+    //val eventRepository: EventRepository by lazy { FakeEventRepository() }
+
+    val eventRepository: EventRepository by lazy {
+        SupabaseEventRepository(
+            client = SupabaseProvider.client
+        )
+    }
     val registrationRepository: RegistrationRepository by lazy { FakeRegistrationRepository() }
     val reviewRepository: ReviewRepository by lazy { FakeReviewRepository() }
-    val categoryRepository: CategoryRepository by lazy { FakeCategoryRepository() }
+    val categoryRepository: CategoryRepository by lazy {
+        SupabaseCategoryRepository(
+            client = SupabaseProvider.client,
+            eventRepository = eventRepository,
+        )
+    }
 }

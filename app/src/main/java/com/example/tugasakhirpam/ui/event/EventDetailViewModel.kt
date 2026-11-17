@@ -46,13 +46,14 @@ class EventDetailViewModel(
     private val _uiState = MutableStateFlow(EventDetailUiState())
     val uiState: StateFlow<EventDetailUiState> = _uiState.asStateFlow()
 
-    private val currentUserId = AppContainer.currentUser.id
+//    private val currentUserId = AppContainer.currentUser.id
 
     fun load(eventId: Long) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = it.event == null, errorMessage = null) }
             runSafely {
                 val event = eventRepository.getEvent(eventId)
+                val currentUserId = AppContainer.currentUser.id
                 val isOwner = event.createdBy == currentUserId
                 EventDetailUiState(
                     isLoading = false,
