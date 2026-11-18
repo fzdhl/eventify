@@ -32,7 +32,10 @@ class FakeRegistrationRepository : RegistrationRepository {
     }
 
     override suspend fun findMyRegistration(eventId: Long): Registration? = db.transaction {
-        db.registrations.firstOrNull { it.eventId == eventId && it.userId == userId }?.let(db::withEvent)
+        db.registrations
+            .filter { it.eventId == eventId && it.userId == userId }
+            .maxByOrNull { if (it.isActive) 1 else 0 }
+            ?.let(db::withEvent)
     }
 
     override suspend fun createRegistration(input: RegistrationInput) {
@@ -41,21 +44,36 @@ class FakeRegistrationRepository : RegistrationRepository {
             when {
                 event.createdBy == userId -> error("Kamu tidak bisa mendaftar ke event milikmu sendiri.")
                 event.isPast -> error("Pendaftaran ditutup karena event sudah lewat.")
-                db.registrations.any { it.eventId == input.eventId && it.userId == userId } ->
-                    error("Kamu sudah pernah mendaftar di event ini. Cek tab Registrations.")
+                db.registrations.any { it.eventId == input.eventId && it.userId == userId && it.isActive } ->
+                    error("Kamu sudah terdaftar di event ini. Cek tab Registrations.")
                 event.isFull -> error("Maaf, kuota event ini sudah penuh.")
             }
-            db.registrations += Registration(
-                id = db.nextRegistrationId++,
-                eventId = input.eventId,
-                userId = userId,
-                fullName = input.fullName,
-                nim = input.nim,
-                email = input.email,
-                phone = input.phone,
-                status = RegistrationStatus.CONFIRMED,
-                createdAt = OffsetDateTime.now().toString(),
-            )
+            val existingCancelledIndex = db.registrations.indexOfFirst {
+                it.eventId == input.eventId && it.userId == userId && !it.isActive
+            }
+            if (existingCancelledIndex != -1) {
+                val existing = db.registrations[existingCancelledIndex]
+                db.registrations[existingCancelledIndex] = existing.copy(
+                    fullName = input.fullName,
+                    nim = input.nim,
+                    email = input.email,
+                    phone = input.phone,
+                    status = RegistrationStatus.CONFIRMED,
+                    createdAt = OffsetDateTime.now().toString(),
+                )
+            } else {
+                db.registrations += Registration(
+                    id = db.nextRegistrationId++,
+                    eventId = input.eventId,
+                    userId = userId,
+                    fullName = input.fullName,
+                    nim = input.nim,
+                    email = input.email,
+                    phone = input.phone,
+                    status = RegistrationStatus.CONFIRMED,
+                    createdAt = OffsetDateTime.now().toString(),
+                )
+            }
         }
     }
 

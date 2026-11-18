@@ -80,7 +80,10 @@ class RegistrationFormViewModel(
             val user = AppContainer.currentUser
             runSafely {
                 val events = eventRepository.getEvents().filter { !it.isPast }
-                val registeredIds = registrationRepository.getMyRegistrations().map { it.eventId }.toSet()
+                val registeredIds = registrationRepository.getMyRegistrations()
+                    .filter { it.isActive }
+                    .map { it.eventId }
+                    .toSet()
                 events.map { event ->
                     val reason = when {
                         event.createdBy == user.id -> "Event milikmu"

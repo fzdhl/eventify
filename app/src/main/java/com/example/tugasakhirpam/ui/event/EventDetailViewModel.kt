@@ -31,7 +31,7 @@ data class EventDetailUiState(
 ) {
     val registerAction: RegisterAction
         get() = when {
-            myRegistration != null -> RegisterAction.VIEW_REGISTRATION
+            myRegistration?.isActive == true -> RegisterAction.VIEW_REGISTRATION
             event?.isPast == true -> RegisterAction.EVENT_PAST
             event?.isFull == true -> RegisterAction.QUOTA_FULL
             else -> RegisterAction.REGISTER
